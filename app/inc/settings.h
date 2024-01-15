@@ -5,6 +5,14 @@
 extern "C" {
 #endif
 
+#include "variables.h"
+
+enum Settings_Constants {
+    SETTING_SUCCESS,
+    SETTING_ERROR = -1
+};
+
+int initialization(MCUDef *mcu);
 
 #ifdef __cplusplus
 }

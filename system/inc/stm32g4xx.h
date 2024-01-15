@@ -59,7 +59,7 @@
 #if !defined (STM32G431xx) && !defined (STM32G441xx) && !defined (STM32G471xx) && \
     !defined (STM32G473xx) && !defined (STM32G474xx) && !defined (STM32G484xx) && \
     !defined (STM32GBK1CB) && !defined (STM32G491xx) && !defined (STM32G4A1xx)
-    #define STM32G431xx */   /*!< STM32G431xx Devices */
+    #define STM32G431xx   /*!< STM32G431xx Devices */
   /* #define STM32G441xx */   /*!< STM32G441xx Devices */
   /* #define STM32G471xx */   /*!< STM32G471xx Devices */
   /* #define STM32G473xx */   /*!< STM32G473xx Devices */
