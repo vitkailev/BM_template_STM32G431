@@ -22,6 +22,8 @@
 #include "stm32g4xx_hal.h"
 #include "stm32g4xx_it.h"
 
+#include "variables.h"
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -125,4 +127,6 @@ void SysTick_Handler(void) {
 /*  file (startup_stm32g4xxxx.s).                                             */
 /******************************************************************************/
 
-
+void TIM7_IRQHandler(void) {
+    HAL_TIM_IRQHandler((TIM_HandleTypeDef *) Mcu.timer_8kHz.obj);
+}
