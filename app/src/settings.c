@@ -5,6 +5,8 @@
 static TIM_HandleTypeDef timer7Handler;
 
 static int settingSystemClock(void) {
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+
     RCC_OscInitTypeDef oscInit = {0};
     oscInit.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_LSI;
     oscInit.LSEState = RCC_LSE_OFF;
@@ -45,6 +47,7 @@ static int settingSystemClock(void) {
 static int settingGPIO(void) {
     GPIO_InitTypeDef gpioInit = {0};
 
+    // Button
     __HAL_RCC_GPIOC_CLK_ENABLE();
     gpioInit.Pin = GPIO_PIN_13;
     gpioInit.Mode = GPIO_MODE_INPUT;
@@ -52,12 +55,29 @@ static int settingGPIO(void) {
     gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOC, &gpioInit);
 
+    // LED
     __HAL_RCC_GPIOA_CLK_ENABLE();
     gpioInit.Pin = GPIO_PIN_5;
     gpioInit.Mode = GPIO_MODE_OUTPUT_OD;
     gpioInit.Pull = GPIO_PULLDOWN;
     gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOA, &gpioInit);
+
+    // GPIO: D2, D7, D8
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    gpioInit.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10;
+    gpioInit.Mode = GPIO_MODE_OUTPUT_PP;
+    gpioInit.Pull = GPIO_PULLDOWN;
+    gpioInit.Speed = GPIO_SPEED_FREQ_MEDIUM;
+    HAL_GPIO_Init(GPIOA, &gpioInit);
+
+    // GPIO: D4
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    gpioInit.Pin = GPIO_PIN_5;
+    gpioInit.Mode = GPIO_MODE_OUTPUT_PP;
+    gpioInit.Pull = GPIO_PULLDOWN;
+    gpioInit.Speed = GPIO_SPEED_FREQ_MEDIUM;
+    HAL_GPIO_Init(GPIOB, &gpioInit);
 
     return SETTING_SUCCESS;
 }

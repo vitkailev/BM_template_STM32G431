@@ -15,10 +15,17 @@ enum Constants {
 
     BUTTON_1 = 0,
     NUMBER_BUTTONS,
+
+    // Oscilloscope measurement
+    OSC_CHANNEL_1 = 0,
+    OSC_CHANNEL_2,
+    OSC_CHANNEL_3,
+    OSC_CHANNEL_4,
+    NUMBER_OSC_CHANNELS
 };
 
 typedef struct {
-    volatile bool isTimerTriggered;
+    volatile bool isSysTickTriggered;
 } FlagsDef;
 
 typedef struct {
