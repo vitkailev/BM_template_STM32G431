@@ -117,6 +117,8 @@ void PendSV_Handler(void) {
   * @retval None
   */
 void SysTick_Handler(void) {
+    Mcu.flags.isSysTickTriggered = true;
+
     HAL_IncTick();
 }
 
