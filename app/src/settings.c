@@ -34,7 +34,7 @@ static int settingSystemClock(void) {
     clkInit.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
     clkInit.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 
-    clkInit.AHBCLKDivider = RCC_SYSCLK_DIV1; // 144MHz
+    clkInit.AHBCLKDivider = RCC_SYSCLK_DIV1; // HCLK = 144MHz
     clkInit.APB1CLKDivider = RCC_HCLK_DIV4; // 36MHz
     clkInit.APB2CLKDivider = RCC_HCLK_DIV4; // 36MHz
 
@@ -83,11 +83,15 @@ static int settingGPIO(void) {
 }
 
 static int settingTimer(TimerDef *timer) {
+    uint32_t sourceClock1 = HAL_RCC_GetPCLK1Freq();
+    // APB1Divider != 1
+    sourceClock1 *= 2;
+
     timer->obj = (void *) &timer7Handler;
     TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->obj;
     tim->Instance = TIM7;
-    tim->Init.Period = timer->freq / 1000U - 1U;
-    tim->Init.Prescaler = HAL_RCC_GetPCLK1Freq() / timer->freq - 1U;
+    tim->Init.Period = 100U - 1U;
+    tim->Init.Prescaler = sourceClock1 / timer->freq / 100U - 1U;
     tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     tim->Init.CounterMode = TIM_COUNTERMODE_UP;
     tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
