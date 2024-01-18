@@ -29,6 +29,17 @@ typedef struct {
 } FlagsDef;
 
 typedef struct {
+    bool isTriggered;
+    bool state;
+
+    uint16_t delay;
+    uint16_t duration;
+
+    uint16_t pin;
+    void *obj;
+} PortDef;
+
+typedef struct {
     volatile bool isTriggered;
     uint16_t freq;
     void *obj;
@@ -38,6 +49,10 @@ typedef struct {
     FlagsDef flags;
 
     uint32_t runtime;
+
+    PortDef led;
+    PortDef button;
+    PortDef oscPins[NUMBER_OSC_CHANNELS];
 
     TimerDef timer_8kHz;
 } MCUDef;

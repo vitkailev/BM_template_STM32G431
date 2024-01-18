@@ -5,6 +5,16 @@
 extern "C" {
 #endif
 
+#include "variables.h"
+
+void changePinState(PortDef *port, bool state);
+
+bool isPinTriggered(const PortDef *port);
+
+bool getPinState(const PortDef *port);
+
+void checkPinState(PortDef *port);
+
 
 #ifdef __cplusplus
 }
