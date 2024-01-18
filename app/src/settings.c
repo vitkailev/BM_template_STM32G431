@@ -99,11 +99,18 @@ static int settingTimer(TimerDef *timer) {
     return SETTING_SUCCESS;
 }
 
+static int turnOnInterrupts(MCUDef *mcu) {
+    if (HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) mcu->timer_8kHz.obj) == HAL_OK)
+        return SETTING_SUCCESS;
+
+    return SETTING_ERROR;
+}
+
 int initialization(MCUDef *mcu) {
     if (settingSystemClock() == SETTING_SUCCESS &&
         settingGPIO() == SETTING_SUCCESS &&
-        settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS) {
-        return SETTING_SUCCESS;
-    }
+        settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS)
+        return turnOnInterrupts(mcu);
+
     return SETTING_ERROR;
 }
