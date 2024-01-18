@@ -46,6 +46,14 @@ static void application(void) {
 
         Mcu.runtime++;
         checkPinState(&Mcu.button);
+
+        changePinState(&Mcu.oscPins[OSC_CHANNEL_1], !getPinState(&Mcu.oscPins[OSC_CHANNEL_1]));
+    }
+
+    if (Mcu.timer_8kHz.isTriggered) {
+        Mcu.timer_8kHz.isTriggered = false;
+
+        changePinState(&Mcu.oscPins[OSC_CHANNEL_2], !getPinState(&Mcu.oscPins[OSC_CHANNEL_2]));
     }
 
     if (isPinTriggered(&Mcu.button)) {
