@@ -5,7 +5,7 @@
 static TIM_HandleTypeDef timer7Handler;
 
 static int settingSystemClock(void) {
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+    HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
 
     RCC_OscInitTypeDef oscInit = {0};
     oscInit.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_LSI;
@@ -38,7 +38,7 @@ static int settingSystemClock(void) {
     clkInit.APB1CLKDivider = RCC_HCLK_DIV4; // 36MHz
     clkInit.APB2CLKDivider = RCC_HCLK_DIV4; // 36MHz
 
-    if (HAL_RCC_ClockConfig(&clkInit, FLASH_LATENCY_0) != HAL_OK)
+    if (HAL_RCC_ClockConfig(&clkInit, FLASH_LATENCY_4) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
@@ -58,7 +58,7 @@ static int settingGPIO(void) {
     // LED
     __HAL_RCC_GPIOA_CLK_ENABLE();
     gpioInit.Pin = GPIO_PIN_5;
-    gpioInit.Mode = GPIO_MODE_OUTPUT_OD;
+    gpioInit.Mode = GPIO_MODE_OUTPUT_PP;
     gpioInit.Pull = GPIO_PULLDOWN;
     gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOA, &gpioInit);
@@ -86,8 +86,8 @@ static int settingTimer(TimerDef *timer) {
     timer->obj = (void *) &timer7Handler;
     TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->obj;
     tim->Instance = TIM7;
-    tim->Init.Period = timer->freq;
-    tim->Init.Prescaler = HAL_RCC_GetPCLK1Freq() / timer->freq;
+    tim->Init.Period = timer->freq / 1000U - 1U;
+    tim->Init.Prescaler = HAL_RCC_GetPCLK1Freq() / timer->freq - 1U;
     tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     tim->Init.CounterMode = TIM_COUNTERMODE_UP;
     tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -100,13 +100,9 @@ static int settingTimer(TimerDef *timer) {
 }
 
 int initialization(MCUDef *mcu) {
-    if (settingSystemClock() != SETTING_SUCCESS) {
-
-    } else if (settingGPIO() != SETTING_SUCCESS) {
-
-    } else if (settingTimer(&mcu->timer_8kHz) != SETTING_SUCCESS) {
-
-    } else {
+    if (settingSystemClock() == SETTING_SUCCESS &&
+        settingGPIO() == SETTING_SUCCESS &&
+        settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS) {
         return SETTING_SUCCESS;
     }
     return SETTING_ERROR;
