@@ -37,6 +37,8 @@ static int initPeripheral(void) {
     Mcu.timer_8kHz.freq = 8000; // Hz
 
     initialization(&Mcu);
+
+    readUniqueID(&Mcu);
     return 0;
 }
 
