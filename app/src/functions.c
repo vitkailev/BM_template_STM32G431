@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "stm32g4xx_hal.h"
 
 #include "functions.h"
@@ -32,4 +34,10 @@ void checkPinState(PortDef *port) {
         port->isTriggered = !port->state;
         port->state = true;
     }
+}
+
+void readUniqueID(MCUDef *mcu) {
+    // RM0440 Reference manual, 48.1 Unique device ID, page 2108
+    const void *baseAddr = (const void *) 0x1FFF7590;
+    memcpy((void *) mcu->uniqueID, (const void *) baseAddr, UNIQUE_ID_SIZE);
 }

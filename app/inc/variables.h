@@ -10,6 +10,8 @@ extern "C" {
 #include <stdint.h>
 
 enum Constants {
+    UNIQUE_ID_SIZE = 12U,
+
     LED_GREEN = 0,
     NUMBER_LEDS,
 
@@ -49,6 +51,7 @@ typedef struct {
     FlagsDef flags;
 
     uint32_t runtime;
+    uint8_t uniqueID[UNIQUE_ID_SIZE];
 
     PortDef led;
     PortDef button;

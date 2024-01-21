@@ -15,6 +15,8 @@ bool getPinState(const PortDef *port);
 
 void checkPinState(PortDef *port);
 
+void readUniqueID(MCUDef *mcu);
+
 
 #ifdef __cplusplus
 }
