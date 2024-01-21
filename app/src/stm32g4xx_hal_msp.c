@@ -49,7 +49,7 @@ void HAL_MspDeInit(void) {
 }
 
 /**
- * @brief Initialize the base timers
+ * @brief Initialize the base timers, turn ON a clock source and setup interrupt vector
  * @param htim is the pointer to the data structure of the base timer handler.
  */
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
@@ -69,5 +69,26 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
         __HAL_RCC_TIM7_FORCE_RESET();
         __HAL_RCC_TIM7_RELEASE_RESET();
         HAL_NVIC_DisableIRQ(TIM7_IRQn);
+    }
+}
+
+/**
+ * @brief Initialize the CRC module, turn ON a clock source
+ * @param hcrc is the pointer to the data structure of the CRC module.
+ */
+void HAL_CRC_MspInit(CRC_HandleTypeDef *hcrc) {
+    if (hcrc->Instance == CRC) {
+        __HAL_RCC_CRC_CLK_ENABLE();
+    }
+}
+
+/**
+ * @brief DeInitialize the CRC module
+ * @param hcrc is the pointer to the data structure of the CRC module.
+ */
+void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc) {
+    if (hcrc->Instance == CRC) {
+        __HAL_RCC_CRC_FORCE_RESET();
+        __HAL_RCC_CRC_RELEASE_RESET();
     }
 }

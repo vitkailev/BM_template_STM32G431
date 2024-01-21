@@ -3,6 +3,7 @@
 #include "settings.h"
 
 static TIM_HandleTypeDef timer7Handler;
+static CRC_HandleTypeDef crcHandler;
 
 static int settingSystemClock(void) {
     HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
@@ -103,6 +104,23 @@ static int settingTimer(TimerDef *timer) {
     return SETTING_SUCCESS;
 }
 
+static int settingCRC(MCUDef *mcu) {
+    mcu->crcHandler = &crcHandler;
+    CRC_HandleTypeDef *crcInit = (CRC_HandleTypeDef *) mcu->crcHandler;
+    crcInit->Instance = CRC;
+    crcInit->InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES; // uint8_t
+    crcInit->Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+    crcInit->Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+    crcInit->Init.CRCLength = CRC_POLYLENGTH_32B;
+    crcInit->Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_BYTE;
+    crcInit->Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_ENABLE;
+
+    if (HAL_CRC_Init(&crcHandler) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
 static int turnOnInterrupts(MCUDef *mcu) {
     if (HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) mcu->timer_8kHz.obj) == HAL_OK)
         return SETTING_SUCCESS;
@@ -113,7 +131,8 @@ static int turnOnInterrupts(MCUDef *mcu) {
 int initialization(MCUDef *mcu) {
     if (settingSystemClock() == SETTING_SUCCESS &&
         settingGPIO() == SETTING_SUCCESS &&
-        settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS)
+        settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS &&
+        settingCRC(mcu) == SETTING_SUCCESS)
         return turnOnInterrupts(mcu);
 
     return SETTING_ERROR;

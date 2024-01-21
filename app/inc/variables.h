@@ -58,6 +58,8 @@ typedef struct {
     PortDef oscPins[NUMBER_OSC_CHANNELS];
 
     TimerDef timer_8kHz;
+
+    void *crcHandler;
 } MCUDef;
 
 extern MCUDef Mcu;

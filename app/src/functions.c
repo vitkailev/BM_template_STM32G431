@@ -41,3 +41,12 @@ void readUniqueID(MCUDef *mcu) {
     const void *baseAddr = (const void *) 0x1FFF7590;
     memcpy((void *) mcu->uniqueID, (const void *) baseAddr, UNIQUE_ID_SIZE);
 }
+
+uint32_t getCRC(const void *data, uint32_t size) {
+    // https://crccalc.com/
+    // CRC-32
+
+    uint32_t result = HAL_CRC_Calculate(Mcu.crcHandler, (uint32_t *) data, size);
+    HAL_CRC_StateTypeDef state = HAL_CRC_GetState(Mcu.crcHandler);
+    return (state == HAL_CRC_STATE_READY) ? (result ^ 0xFFFFFFFFU) : 0;
+}
