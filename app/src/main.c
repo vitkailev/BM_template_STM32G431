@@ -36,9 +36,12 @@ static int initPeripheral(void) {
     Mcu.oscPins[OSC_CHANNEL_4].obj = GPIOA;
     Mcu.timer_8kHz.freq = 8000; // Hz
 
-    initialization(&Mcu);
+    if (initialization(&Mcu) == SETTING_SUCCESS) {
+        readUniqueID(&Mcu);
+        UART_init(&Mcu.uart1);
+        UART_init(&Mcu.uart2);
+    }
 
-    readUniqueID(&Mcu);
     return 0;
 }
 
@@ -62,5 +65,15 @@ static void application(void) {
         Mcu.button.isTriggered = false;
 
         changePinState(&Mcu.led, !getPinState(&Mcu.led));
+    }
+
+    UART_update(&Mcu.uart1, HAL_GetTick());
+    if (UART_isHaveData(&Mcu.uart1)) {
+        Mcu.uart1.isHaveData = false;
+    }
+
+    UART_update(&Mcu.uart2, HAL_GetTick());
+    if (UART_isHaveData(&Mcu.uart2)) {
+        Mcu.uart2.isHaveData = false;
     }
 }
