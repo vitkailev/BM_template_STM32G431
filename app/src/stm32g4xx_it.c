@@ -132,3 +132,11 @@ void SysTick_Handler(void) {
 void TIM7_IRQHandler(void) {
     HAL_TIM_IRQHandler((TIM_HandleTypeDef *) Mcu.timer_8kHz.obj);
 }
+
+void USART1_IRQHandler(void) {
+    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart1.obj);
+}
+
+void USART2_IRQHandler(void) {
+    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart2.obj);
+}

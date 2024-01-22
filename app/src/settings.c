@@ -3,6 +3,8 @@
 #include "settings.h"
 
 static TIM_HandleTypeDef timer7Handler;
+static UART_HandleTypeDef usart1Handler;
+static UART_HandleTypeDef usart2Handler;
 static CRC_HandleTypeDef crcHandler;
 
 static int settingSystemClock(void) {
@@ -104,6 +106,48 @@ static int settingTimer(TimerDef *timer) {
     return SETTING_SUCCESS;
 }
 
+static int settingUART(MCUDef *mcu) {
+    UART_HandleTypeDef *uartInit = NULL;
+
+    mcu->uart1.obj = &usart1Handler;
+    uartInit = (UART_HandleTypeDef *) mcu->uart1.obj;
+    uartInit->Instance = USART1;
+    uartInit->FifoMode = UART_FIFOMODE_DISABLE;
+    uartInit->Init.BaudRate = 115200;
+    uartInit->Init.WordLength = UART_WORDLENGTH_8B;
+    uartInit->Init.StopBits = UART_STOPBITS_1;
+    uartInit->Init.Parity = UART_PARITY_NONE;
+    uartInit->Init.Mode = UART_MODE_TX_RX;
+    uartInit->Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    uartInit->Init.OverSampling = UART_OVERSAMPLING_16;
+    uartInit->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+    uartInit->Init.ClockPrescaler = UART_PRESCALER_DIV1;
+    uartInit->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
+    if (HAL_UART_Init(uartInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    mcu->uart2.obj = &usart2Handler;
+    uartInit = (UART_HandleTypeDef *) mcu->uart2.obj;
+    uartInit->Instance = USART2;
+    uartInit->FifoMode = UART_FIFOMODE_DISABLE;
+    uartInit->Init.BaudRate = 115200;
+    uartInit->Init.WordLength = UART_WORDLENGTH_8B;
+    uartInit->Init.StopBits = UART_STOPBITS_1;
+    uartInit->Init.Parity = UART_PARITY_NONE;
+    uartInit->Init.Mode = UART_MODE_TX_RX;
+    uartInit->Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    uartInit->Init.OverSampling = UART_OVERSAMPLING_16;
+    uartInit->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+    uartInit->Init.ClockPrescaler = UART_PRESCALER_DIV1;
+    uartInit->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
+    if (HAL_UART_Init(uartInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
 static int settingCRC(MCUDef *mcu) {
     mcu->crcHandler = &crcHandler;
     CRC_HandleTypeDef *crcInit = (CRC_HandleTypeDef *) mcu->crcHandler;
@@ -122,7 +166,9 @@ static int settingCRC(MCUDef *mcu) {
 }
 
 static int turnOnInterrupts(MCUDef *mcu) {
-    if (HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) mcu->timer_8kHz.obj) == HAL_OK)
+    if (HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) mcu->timer_8kHz.obj) == HAL_OK &&
+        HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart1.obj, &mcu->uart1.rxByte, 1U) == HAL_OK &&
+        HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart2.obj, &mcu->uart2.rxByte, 1U) == HAL_OK)
         return SETTING_SUCCESS;
 
     return SETTING_ERROR;
@@ -132,6 +178,7 @@ int initialization(MCUDef *mcu) {
     if (settingSystemClock() == SETTING_SUCCESS &&
         settingGPIO() == SETTING_SUCCESS &&
         settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS &&
+        settingUART(mcu) == SETTING_SUCCESS &&
         settingCRC(mcu) == SETTING_SUCCESS)
         return turnOnInterrupts(mcu);
 

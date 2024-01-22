@@ -9,6 +9,8 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "uart.h"
+
 enum Constants {
     UNIQUE_ID_SIZE = 12U,
 
@@ -57,9 +59,10 @@ typedef struct {
     PortDef button;
     PortDef oscPins[NUMBER_OSC_CHANNELS];
 
-    TimerDef timer_8kHz;
-
     void *crcHandler;
+    TimerDef timer_8kHz;
+    UARTDef uart1;
+    UARTDef uart2;
 } MCUDef;
 
 extern MCUDef Mcu;

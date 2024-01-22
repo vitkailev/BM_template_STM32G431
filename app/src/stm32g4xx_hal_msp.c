@@ -55,6 +55,7 @@ void HAL_MspDeInit(void) {
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM7) {
         __HAL_RCC_TIM7_CLK_ENABLE();
+
         HAL_NVIC_SetPriority(TIM7_IRQn, 5, 0);
         HAL_NVIC_EnableIRQ(TIM7_IRQn);
     }
@@ -68,7 +69,71 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM7) {
         __HAL_RCC_TIM7_FORCE_RESET();
         __HAL_RCC_TIM7_RELEASE_RESET();
+        __HAL_RCC_TIM7_CLK_DISABLE();
+
         HAL_NVIC_DisableIRQ(TIM7_IRQn);
+    }
+}
+
+/**
+ * @brief Initialize the UART interfaces, turn ON a clock source, setup GPIO and interrupt vector
+ * @param huart is the pointer to the data structure of the UART interface handler.
+ */
+void HAL_UART_MspInit(UART_HandleTypeDef *huart) {
+    GPIO_InitTypeDef gpioInit = {0};
+
+    if (huart->Instance == USART1) {
+        __HAL_RCC_USART1_CLK_ENABLE();
+
+        __HAL_RCC_GPIOC_CLK_ENABLE();
+        gpioInit.Pin = GPIO_PIN_4 | GPIO_PIN_5;
+        gpioInit.Mode = GPIO_MODE_AF_PP;
+        gpioInit.Pull = GPIO_PULLUP;
+        gpioInit.Speed = GPIO_SPEED_FREQ_HIGH;
+        gpioInit.Alternate = GPIO_AF7_USART1;
+        HAL_GPIO_Init(GPIOC, &gpioInit);
+
+        HAL_NVIC_SetPriority(USART1_IRQn, 3, 0);
+        HAL_NVIC_EnableIRQ(USART1_IRQn);
+    } else if (huart->Instance == USART2) {
+        __HAL_RCC_USART2_CLK_ENABLE();
+
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        gpioInit.Pin = GPIO_PIN_2 | GPIO_PIN_3;
+        gpioInit.Mode = GPIO_MODE_AF_PP;
+        gpioInit.Pull = GPIO_PULLUP;
+        gpioInit.Speed = GPIO_SPEED_FREQ_HIGH;
+        gpioInit.Alternate = GPIO_AF7_USART2;
+        HAL_GPIO_Init(GPIOA, &gpioInit);
+
+        HAL_NVIC_SetPriority(USART2_IRQn, 3, 0);
+        HAL_NVIC_EnableIRQ(USART2_IRQn);
+    }
+}
+
+/**
+ * @brief DeInitialize the UART interfaces
+ * @param huart is the pointer to the data structure of the UART interface handler.
+ */
+void HAL_UART_MspDeInit(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART1) {
+        __HAL_RCC_USART1_FORCE_RESET();
+        __HAL_RCC_USART1_RELEASE_RESET();
+        __HAL_RCC_USART1_CLK_DISABLE();
+
+        HAL_GPIO_DeInit(GPIOC, GPIO_PIN_4);
+        HAL_GPIO_DeInit(GPIOC, GPIO_PIN_5);
+
+        HAL_NVIC_DisableIRQ(USART1_IRQn);
+    } else if (huart->Instance == USART2) {
+        __HAL_RCC_USART2_FORCE_RESET();
+        __HAL_RCC_USART2_RELEASE_RESET();
+        __HAL_RCC_USART2_CLK_DISABLE();
+
+        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2);
+        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_3);
+
+        HAL_NVIC_DisableIRQ(USART2_IRQn);
     }
 }
 
@@ -90,5 +155,6 @@ void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc) {
     if (hcrc->Instance == CRC) {
         __HAL_RCC_CRC_FORCE_RESET();
         __HAL_RCC_CRC_RELEASE_RESET();
+        __HAL_RCC_CRC_CLK_DISABLE();
     }
 }

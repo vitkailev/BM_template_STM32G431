@@ -7,3 +7,55 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         Mcu.timer_8kHz.isTriggered = true;
     }
 }
+
+static void UART_txHandler(UARTDef *uart) {
+    uart->isWriting = false;
+
+    uart->head += uart->nSent;
+    if (uart->head == (uart->queue + UART_QUEUE_SIZE))
+        uart->head = uart->queue;
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.obj)->Instance) {
+        UART_txHandler(&Mcu.uart1);
+    } else if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart2.obj)->Instance) {
+        UART_txHandler(&Mcu.uart2);
+    }
+}
+
+static void UART_rxHandler(UARTDef *uart, uint32_t time) {
+    if (!uart->isReading)
+        uart->size = 0;
+
+    uart->isReading = true;
+    uart->time = time;
+    if (uart->size >= UART_BUFFER_SIZE)
+        uart->size = 0;
+
+    *(uart->buffer + uart->size++) = uart->rxByte;
+
+    HAL_UART_Receive_IT((UART_HandleTypeDef *) uart->obj, &uart->rxByte, 1U);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.obj)->Instance) {
+        UART_rxHandler(&Mcu.uart1, HAL_GetTick());
+    } else if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart2.obj)->Instance) {
+        UART_rxHandler(&Mcu.uart2, HAL_GetTick());
+    }
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.obj)->Instance) {
+        Mcu.uart1.isWriting = false;
+        Mcu.uart1.isReading = false;
+        Mcu.uart1.errType = HAL_UART_GetError((UART_HandleTypeDef *) Mcu.uart1.obj);
+        Mcu.uart1.errors++;
+    } else if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart2.obj)->Instance) {
+        Mcu.uart2.isWriting = false;
+        Mcu.uart2.isReading = false;
+        Mcu.uart2.errType = HAL_UART_GetError((UART_HandleTypeDef *) Mcu.uart2.obj);
+        Mcu.uart2.errors++;
+    }
+}
