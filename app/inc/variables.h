@@ -30,6 +30,7 @@ enum Constants {
 
 typedef struct {
     volatile bool isSysTickTriggered;
+    bool isWDTTriggered;
 } FlagsDef;
 
 typedef struct {
@@ -60,6 +61,7 @@ typedef struct {
     PortDef oscPins[NUMBER_OSC_CHANNELS];
 
     void *crcHandler;
+    void *wdtHandler;
     TimerDef timer_8kHz;
     UARTDef uart1;
     UARTDef uart2;

@@ -13,7 +13,13 @@ int main(void) {
     HAL_Init();
     initPeripheral();
 
+    if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST))
+        Mcu.flags.isWDTTriggered = true;
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+
     while (true) {
+        HAL_IWDG_Refresh((IWDG_HandleTypeDef *) Mcu.wdtHandler);
+
         application();
     }
     return 1;
@@ -46,6 +52,12 @@ static int initPeripheral(void) {
 }
 
 static void application(void) {
+    if (Mcu.flags.isWDTTriggered) {
+        Mcu.flags.isWDTTriggered = false;
+
+        changePinState(&Mcu.led, true);
+    }
+
     if (Mcu.flags.isSysTickTriggered) {
         Mcu.flags.isSysTickTriggered = false;
 
@@ -63,8 +75,6 @@ static void application(void) {
 
     if (isPinTriggered(&Mcu.button)) {
         Mcu.button.isTriggered = false;
-
-        changePinState(&Mcu.led, !getPinState(&Mcu.led));
     }
 
     UART_update(&Mcu.uart1, HAL_GetTick());

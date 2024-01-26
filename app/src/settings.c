@@ -6,6 +6,7 @@ static TIM_HandleTypeDef timer7Handler;
 static UART_HandleTypeDef usart1Handler;
 static UART_HandleTypeDef usart2Handler;
 static CRC_HandleTypeDef crcHandler;
+static IWDG_HandleTypeDef wdtHandler;
 
 static int settingSystemClock(void) {
     HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
@@ -165,6 +166,20 @@ static int settingCRC(MCUDef *mcu) {
     return SETTING_SUCCESS;
 }
 
+static int settingWDT(MCUDef *mcu) {
+    mcu->wdtHandler = (void *) &wdtHandler;
+    IWDG_HandleTypeDef *wdtInit = (IWDG_HandleTypeDef *) mcu->wdtHandler;
+    wdtInit->Instance = IWDG;
+    wdtInit->Init.Prescaler = IWDG_PRESCALER_8;
+    wdtInit->Init.Reload = 0x0FFF;
+    wdtInit->Init.Window = 0x0FFF; // window mode is turn OFF
+
+    if (HAL_IWDG_Init(wdtInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
 static int turnOnInterrupts(MCUDef *mcu) {
     if (HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) mcu->timer_8kHz.obj) == HAL_OK &&
         HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart1.obj, &mcu->uart1.rxByte, 1U) == HAL_OK &&
@@ -179,7 +194,8 @@ int initialization(MCUDef *mcu) {
         settingGPIO() == SETTING_SUCCESS &&
         settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS &&
         settingUART(mcu) == SETTING_SUCCESS &&
-        settingCRC(mcu) == SETTING_SUCCESS)
+        settingCRC(mcu) == SETTING_SUCCESS &&
+        settingWDT(mcu) == SETTING_SUCCESS)
         return turnOnInterrupts(mcu);
 
     return SETTING_ERROR;
