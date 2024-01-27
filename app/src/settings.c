@@ -6,6 +6,7 @@ static TIM_HandleTypeDef timer7Handler;
 static UART_HandleTypeDef usart1Handler;
 static UART_HandleTypeDef usart2Handler;
 static CRC_HandleTypeDef crcHandler;
+static RNG_HandleTypeDef rngHandler;
 static IWDG_HandleTypeDef wdtHandler;
 
 static int settingSystemClock(void) {
@@ -166,6 +167,18 @@ static int settingCRC(MCUDef *mcu) {
     return SETTING_SUCCESS;
 }
 
+static int settingRNG(MCUDef *mcu) {
+    mcu->rngHandler = (void *) &rngHandler;
+    RNG_HandleTypeDef *rngInit = (RNG_HandleTypeDef *) mcu->rngHandler;
+    rngInit->Instance = RNG;
+    rngInit->Init.ClockErrorDetection = RNG_CED_ENABLE;
+
+    if (HAL_RNG_Init(rngInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
 static int settingWDT(MCUDef *mcu) {
     mcu->wdtHandler = (void *) &wdtHandler;
     IWDG_HandleTypeDef *wdtInit = (IWDG_HandleTypeDef *) mcu->wdtHandler;
@@ -195,6 +208,7 @@ int initialization(MCUDef *mcu) {
         settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS &&
         settingUART(mcu) == SETTING_SUCCESS &&
         settingCRC(mcu) == SETTING_SUCCESS &&
+        settingRNG(mcu) == SETTING_SUCCESS &&
         settingWDT(mcu) == SETTING_SUCCESS)
         return turnOnInterrupts(mcu);
 

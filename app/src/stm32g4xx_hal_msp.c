@@ -158,3 +158,30 @@ void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc) {
         __HAL_RCC_CRC_CLK_DISABLE();
     }
 }
+
+/**
+ * @brief Initialize the RNG module, turn ON a clock source
+ * @param hrng is the pointer to the data structure of the RNG module.
+ */
+void HAL_RNG_MspInit(RNG_HandleTypeDef *hrng) {
+    if (hrng->Instance == RNG) {
+        RCC_PeriphCLKInitTypeDef clockInit = {0};
+        clockInit.PeriphClockSelection = RCC_PERIPHCLK_RNG;
+        clockInit.RngClockSelection = RCC_RNGCLKSOURCE_PLL;
+
+        if (HAL_RCCEx_PeriphCLKConfig(&clockInit) == HAL_OK)
+            __HAL_RCC_RNG_CLK_ENABLE();
+    }
+}
+
+/**
+ * @brief DeInitialize the RNG module
+ * @param hrng is the pointer to the data structure of the RNG module.
+ */
+void HAL_RNG_MspDeInit(RNG_HandleTypeDef *hrng) {
+    if (hrng->Instance == RNG) {
+        __HAL_RCC_RNG_FORCE_RESET();
+        __HAL_RCC_RNG_RELEASE_RESET();
+        __HAL_RCC_RNG_CLK_DISABLE();
+    }
+}

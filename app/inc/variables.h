@@ -61,6 +61,7 @@ typedef struct {
     PortDef oscPins[NUMBER_OSC_CHANNELS];
 
     void *crcHandler;
+    void *rngHandler;
     void *wdtHandler;
     TimerDef timer_8kHz;
     UARTDef uart1;
