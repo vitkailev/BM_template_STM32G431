@@ -8,6 +8,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     }
 }
 
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+    if (hadc->Instance == ((ADC_HandleTypeDef *) Mcu.adc.obj)->Instance) {
+        uint32_t value = HAL_ADC_GetValue((ADC_HandleTypeDef *) Mcu.adc.obj);
+
+        if (Mcu.adc.idx >= NUMBER_ADC_CHANNELS)
+            Mcu.adc.idx = 0;
+
+        Mcu.adc.rawValues[Mcu.adc.idx++] = (uint16_t) value;
+
+        if (Mcu.adc.idx == NUMBER_ADC_CHANNELS) {
+            Mcu.adc.isProcessing = false;
+            Mcu.adc.isFinished = true;
+        } else
+            HAL_ADC_Start_IT((ADC_HandleTypeDef *) Mcu.adc.obj);
+    }
+}
+
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc) {
+    if (hadc->Instance == ((ADC_HandleTypeDef *) Mcu.adc.obj)->Instance) {
+        Mcu.adc.isProcessing = false;
+        Mcu.adc.errType = HAL_ADC_GetError((ADC_HandleTypeDef *) Mcu.adc.obj);
+        Mcu.adc.errors++;
+    }
+}
+
 static void UART_txHandler(UARTDef *uart) {
     uart->isWriting = false;
 
