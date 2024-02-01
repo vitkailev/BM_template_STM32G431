@@ -15,6 +15,12 @@ bool getPinState(const PortDef *port);
 
 void checkPinState(PortDef *port);
 
+bool isADCFinished(const ADCDef *adc);
+
+int readAnalogValues(ADCDef *adc);
+
+uint32_t getRealVrefint(void);
+
 void readUniqueID(MCUDef *mcu);
 
 uint32_t getCRC(const void *data, uint32_t size);

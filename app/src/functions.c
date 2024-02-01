@@ -36,6 +36,29 @@ void checkPinState(PortDef *port) {
     }
 }
 
+bool isADCFinished(const ADCDef *adc) {
+    return adc->isFinished;
+}
+
+int readAnalogValues(ADCDef *adc) {
+    if (adc->isProcessing)
+        return HAL_BUSY;
+
+    adc->isProcessing = true;
+    adc->errType = 0;
+    adc->idx = 0;
+    return HAL_ADC_Start_IT((ADC_HandleTypeDef *) adc->obj);
+}
+
+// Datasheet, DS12589 Rev. 6, Analog-to-digital converter (ADC), Internal voltage reference (Vrefint), page 30
+uint32_t getRealVrefint(void) {
+    const uint16_t *calValue = (const uint16_t *) 0x1FFF75AA;
+    uint32_t result = *calValue;
+    result *= 3000;
+    result /= 4095;
+    return result;
+}
+
 void readUniqueID(MCUDef *mcu) {
     // RM0440 Reference manual, 48.1 Unique device ID, page 2108
     const void *baseAddr = (const void *) 0x1FFF7590;
@@ -46,8 +69,8 @@ uint32_t getCRC(const void *data, uint32_t size) {
     // https://crccalc.com/
     // CRC-32
 
-    uint32_t result = HAL_CRC_Calculate(Mcu.crcHandler, (uint32_t *) data, size);
-    HAL_CRC_StateTypeDef state = HAL_CRC_GetState(Mcu.crcHandler);
+    uint32_t result = HAL_CRC_Calculate(Mcu.handlers.crc, (uint32_t *) data, size);
+    HAL_CRC_StateTypeDef state = HAL_CRC_GetState(Mcu.handlers.crc);
     return (state == HAL_CRC_STATE_READY) ? (result ^ 0xFFFFFFFFU) : 0;
 }
 
@@ -58,7 +81,7 @@ uint16_t generateRandomNumbers(uint32_t *dst, uint16_t n) {
     uint16_t i = 0;
     uint32_t value = 0;
     for (i = 0; i < n; ++i) {
-        if (HAL_RNG_GenerateRandomNumber(Mcu.rngHandler, &value) == HAL_OK)
+        if (HAL_RNG_GenerateRandomNumber(Mcu.handlers.rng, &value) == HAL_OK)
             *(dst + i) = value;
         else
             break;
