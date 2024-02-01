@@ -18,7 +18,7 @@ int main(void) {
     __HAL_RCC_CLEAR_RESET_FLAGS();
 
     while (true) {
-        HAL_IWDG_Refresh((IWDG_HandleTypeDef *) Mcu.wdtHandler);
+        HAL_IWDG_Refresh((IWDG_HandleTypeDef *) Mcu.handlers.wdt);
 
         application();
     }
@@ -64,6 +64,9 @@ static void application(void) {
         Mcu.runtime++;
         checkPinState(&Mcu.button);
 
+        if ((Mcu.runtime % 10) == 0)
+            readAnalogValues(&Mcu.adc);
+
         changePinState(&Mcu.oscPins[OSC_CHANNEL_1], !getPinState(&Mcu.oscPins[OSC_CHANNEL_1]));
     }
 
@@ -75,6 +78,23 @@ static void application(void) {
 
     if (isPinTriggered(&Mcu.button)) {
         Mcu.button.isTriggered = false;
+    }
+
+    if (isADCFinished(&Mcu.adc)) {
+        Mcu.adc.isFinished = false;
+
+        uint32_t value = 0;
+        for (uint8_t i = 0; i < NUMBER_ADC_CHANNELS; ++i) {
+            value = Mcu.adc.rawValues[i];
+            if (i == NUMBER_ADC_CHANNELS - 1) {
+                value = getRealVrefint();
+//                value = __LL_ADC_CALC_TEMPERATURE(3300, value, LL_ADC_RESOLUTION_12B);
+            } else {
+                value *= VDD_VALUE;
+                value /= 4095;
+            }
+            Mcu.adc.value[i] = value;
+        }
     }
 
     UART_update(&Mcu.uart1, HAL_GetTick());
