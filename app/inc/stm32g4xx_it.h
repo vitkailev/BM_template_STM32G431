@@ -50,6 +50,8 @@ void SysTick_Handler(void);
 
 void TIM7_IRQHandler(void);
 
+void ADC1_2_IRQHandler(void);
+
 void USART1_IRQHandler(void);
 
 void USART2_IRQHandler(void);
