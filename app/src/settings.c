@@ -3,6 +3,7 @@
 #include "settings.h"
 
 static TIM_HandleTypeDef timer7Handler;
+static ADC_HandleTypeDef adcHandler;
 static UART_HandleTypeDef usart1Handler;
 static UART_HandleTypeDef usart2Handler;
 static CRC_HandleTypeDef crcHandler;
@@ -28,7 +29,11 @@ static int settingSystemClock(void) {
     oscInit.PLL.PLLSource = RCC_PLLSOURCE_HSI; // 16MHz
     oscInit.PLL.PLLM = RCC_PLLM_DIV1;
     oscInit.PLL.PLLN = 18;
-    oscInit.PLL.PLLP = RCC_PLLP_DIV2;
+
+    // Datasheet, DS12589 Rev. 6, Electrical characteristics, Analog-to-digital converter characteristics, page 118
+    // Range 1, Vdda >= 2.7V, max 52MHz
+    oscInit.PLL.PLLP = RCC_PLLP_DIV6; // 48MHz
+
     oscInit.PLL.PLLQ = RCC_PLLQ_DIV6;
     oscInit.PLL.PLLR = RCC_PLLR_DIV2;
 
@@ -108,6 +113,71 @@ static int settingTimer(TimerDef *timer) {
     return SETTING_SUCCESS;
 }
 
+static int settingADC(ADCDef *adc) {
+    adc->obj = (void *) &adcHandler;
+    ADC_HandleTypeDef *adcInit = (ADC_HandleTypeDef *) adc->obj;
+    adcInit->Instance = ADC1;
+    adcInit->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+    adcInit->Init.Resolution = ADC_RESOLUTION_12B;
+    adcInit->Init.DataAlign = ADC_DATAALIGN_RIGHT;
+    adcInit->Init.GainCompensation = 0;
+    adcInit->Init.ScanConvMode = ADC_SCAN_ENABLE;
+    adcInit->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+    adcInit->Init.LowPowerAutoWait = DISABLE;
+    adcInit->Init.ContinuousConvMode = DISABLE;
+    adcInit->Init.NbrOfConversion = 4;
+    adcInit->Init.DiscontinuousConvMode = ENABLE;
+    adcInit->Init.NbrOfDiscConversion = 1;
+    adcInit->Init.ExternalTrigConv = ADC_SOFTWARE_START;
+//    adcInit->Init.ExternalTrigConvEdge =;
+    adcInit->Init.SamplingMode = ADC_SAMPLING_MODE_NORMAL;
+    adcInit->Init.DMAContinuousRequests = DISABLE;
+    adcInit->Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
+    adcInit->Init.OversamplingMode = DISABLE;
+//    adcInit->Init.Oversampling =;
+
+    if (HAL_ADC_Init(adcInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    if (HAL_ADCEx_Calibration_Start(adcInit, ADC_SINGLE_ENDED) != HAL_OK)
+        return SETTING_ERROR;
+
+    ADC_ChannelConfTypeDef chInit = {0};
+
+    chInit.SamplingTime = ADC_SAMPLETIME_47CYCLES_5;
+    chInit.SingleDiff = ADC_SINGLE_ENDED;
+    chInit.OffsetNumber = ADC_OFFSET_NONE;
+    chInit.Offset = 0;
+    chInit.OffsetSign = ADC_OFFSET_SIGN_NEGATIVE;
+    chInit.OffsetSaturation = DISABLE;
+
+    // PA0, ADC12
+    chInit.Channel = ADC_CHANNEL_1;
+    chInit.Rank = ADC_REGULAR_RANK_1;
+    if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    // PA1, ADC12
+    chInit.Channel = ADC_CHANNEL_2;
+    chInit.Rank = ADC_REGULAR_RANK_2;
+    if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    // PB0, ADC1
+    chInit.Channel = ADC_CHANNEL_15;
+    chInit.Rank = ADC_REGULAR_RANK_3;
+    if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    // only ADC1
+    chInit.Channel = ADC_CHANNEL_VREFINT; // ADC_CHANNEL_TEMPSENSOR_ADC1
+    chInit.Rank = ADC_REGULAR_RANK_4;
+    if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
 static int settingUART(MCUDef *mcu) {
     UART_HandleTypeDef *uartInit = NULL;
 
@@ -151,8 +221,8 @@ static int settingUART(MCUDef *mcu) {
 }
 
 static int settingCRC(MCUDef *mcu) {
-    mcu->crcHandler = &crcHandler;
-    CRC_HandleTypeDef *crcInit = (CRC_HandleTypeDef *) mcu->crcHandler;
+    mcu->handlers.crc = &crcHandler;
+    CRC_HandleTypeDef *crcInit = (CRC_HandleTypeDef *) mcu->handlers.crc;
     crcInit->Instance = CRC;
     crcInit->InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES; // uint8_t
     crcInit->Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
@@ -168,8 +238,8 @@ static int settingCRC(MCUDef *mcu) {
 }
 
 static int settingRNG(MCUDef *mcu) {
-    mcu->rngHandler = (void *) &rngHandler;
-    RNG_HandleTypeDef *rngInit = (RNG_HandleTypeDef *) mcu->rngHandler;
+    mcu->handlers.rng = (void *) &rngHandler;
+    RNG_HandleTypeDef *rngInit = (RNG_HandleTypeDef *) mcu->handlers.rng;
     rngInit->Instance = RNG;
     rngInit->Init.ClockErrorDetection = RNG_CED_ENABLE;
 
@@ -180,8 +250,8 @@ static int settingRNG(MCUDef *mcu) {
 }
 
 static int settingWDT(MCUDef *mcu) {
-    mcu->wdtHandler = (void *) &wdtHandler;
-    IWDG_HandleTypeDef *wdtInit = (IWDG_HandleTypeDef *) mcu->wdtHandler;
+    mcu->handlers.wdt = (void *) &wdtHandler;
+    IWDG_HandleTypeDef *wdtInit = (IWDG_HandleTypeDef *) mcu->handlers.wdt;
     wdtInit->Instance = IWDG;
     wdtInit->Init.Prescaler = IWDG_PRESCALER_8;
     wdtInit->Init.Reload = 0x0FFF;
@@ -206,6 +276,7 @@ int initialization(MCUDef *mcu) {
     if (settingSystemClock() == SETTING_SUCCESS &&
         settingGPIO() == SETTING_SUCCESS &&
         settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS &&
+        settingADC(&mcu->adc) == SETTING_SUCCESS &&
         settingUART(mcu) == SETTING_SUCCESS &&
         settingCRC(mcu) == SETTING_SUCCESS &&
         settingRNG(mcu) == SETTING_SUCCESS &&

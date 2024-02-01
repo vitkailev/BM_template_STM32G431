@@ -76,6 +76,58 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
 }
 
 /**
+ * @brief Initialize the ADC module, turn ON a clock source, setup GPIO and interrupt vector
+ * @param hadc is the pointer to the data structure of the ADC module handler.
+ */
+void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc) {
+    GPIO_InitTypeDef gpioInit = {0};
+    RCC_PeriphCLKInitTypeDef clockInit = {0};
+
+    if (hadc->Instance == ADC1) {
+
+        clockInit.PeriphClockSelection = RCC_PERIPHCLK_ADC12;
+        clockInit.Adc12ClockSelection = RCC_ADC12CLKSOURCE_PLL;
+
+        if (HAL_RCCEx_PeriphCLKConfig(&clockInit) == HAL_OK) {
+            __HAL_RCC_ADC12_CLK_ENABLE();
+
+            __HAL_RCC_GPIOA_CLK_ENABLE();
+            gpioInit.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+            gpioInit.Mode = GPIO_MODE_ANALOG;
+            gpioInit.Pull = GPIO_NOPULL;
+            HAL_GPIO_Init(GPIOA, &gpioInit);
+
+            __HAL_RCC_GPIOB_CLK_ENABLE();
+            gpioInit.Pin = GPIO_PIN_0;
+            gpioInit.Mode = GPIO_MODE_ANALOG;
+            gpioInit.Pull = GPIO_NOPULL;
+            HAL_GPIO_Init(GPIOB, &gpioInit);
+
+            HAL_NVIC_SetPriority(ADC1_2_IRQn, 2, 0);
+            HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
+        }
+    }
+}
+
+/**
+ * @brief DeInitialize the ADC module
+ * @param hadc is the pointer to the data structure of the ADC module handler.
+ */
+void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc) {
+    if (hadc->Instance == ADC1) {
+        __HAL_RCC_ADC12_FORCE_RESET();
+        __HAL_RCC_ADC12_RELEASE_RESET();
+        __HAL_RCC_ADC12_CLK_DISABLE();
+
+        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0);
+        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_1);
+        HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0);
+
+        HAL_NVIC_DisableIRQ(ADC1_2_IRQn);
+    }
+}
+
+/**
  * @brief Initialize the UART interfaces, turn ON a clock source, setup GPIO and interrupt vector
  * @param huart is the pointer to the data structure of the UART interface handler.
  */
