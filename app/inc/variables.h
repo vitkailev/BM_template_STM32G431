@@ -25,7 +25,9 @@ enum Constants {
     OSC_CHANNEL_2,
     OSC_CHANNEL_3,
     OSC_CHANNEL_4,
-    NUMBER_OSC_CHANNELS
+    NUMBER_OSC_CHANNELS,
+
+    NUMBER_ADC_CHANNELS = 4U // 3 input pins + Vref or Vtemp
 };
 
 typedef struct {
@@ -51,6 +53,25 @@ typedef struct {
 } TimerDef;
 
 typedef struct {
+    volatile bool isProcessing;
+    volatile bool isFinished;
+    volatile uint32_t errType;
+    volatile uint32_t errors;
+
+    uint8_t idx;
+    uint16_t rawValues[NUMBER_ADC_CHANNELS]; // relative values
+    uint16_t value[NUMBER_ADC_CHANNELS]; // mV
+
+    void *obj;
+} ADCDef;
+
+typedef struct {
+    void *crc;
+    void *rng;
+    void *wdt;
+} HandlersDef;
+
+typedef struct {
     FlagsDef flags;
 
     uint32_t runtime;
@@ -60,10 +81,9 @@ typedef struct {
     PortDef button;
     PortDef oscPins[NUMBER_OSC_CHANNELS];
 
-    void *crcHandler;
-    void *rngHandler;
-    void *wdtHandler;
+    HandlersDef handlers;
     TimerDef timer_8kHz;
+    ADCDef adc;
     UARTDef uart1;
     UARTDef uart2;
 } MCUDef;
