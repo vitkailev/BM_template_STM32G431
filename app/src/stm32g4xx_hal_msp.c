@@ -128,6 +128,47 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc) {
 }
 
 /**
+ * @brief Initialize the DAC module, turn ON a clock source, setup GPIO and interrupt vector
+ * @param hdac is the pointer to the data structure of the DAC module handler.
+ */
+void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac) {
+    GPIO_InitTypeDef gpioInit = {0};
+
+    if (hdac->Instance == DAC1) {
+        __HAL_RCC_DAC1_CLK_ENABLE();
+
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        gpioInit.Pin = GPIO_PIN_4 | GPIO_PIN_5;
+        gpioInit.Mode = GPIO_MODE_ANALOG;
+        gpioInit.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(GPIOA, &gpioInit);
+    }
+    if (hdac->Instance == DAC3) {
+        __HAL_RCC_DAC3_CLK_ENABLE();
+    }
+}
+
+/**
+ * @brief DeInitialize the DAC module
+ * @param hdac is the pointer to the data structure of the DAC module handler.
+ */
+void HAL_DAC_MspDeInit(DAC_HandleTypeDef *hdac) {
+    if (hdac->Instance == DAC1) {
+        __HAL_RCC_DAC1_FORCE_RESET();
+        __HAL_RCC_DAC1_RELEASE_RESET();
+        __HAL_RCC_DAC1_CLK_DISABLE();
+
+        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4);
+        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_5);
+    }
+    if (hdac->Instance == DAC3) {
+        __HAL_RCC_DAC3_FORCE_RESET();
+        __HAL_RCC_DAC3_RELEASE_RESET();
+        __HAL_RCC_DAC3_CLK_DISABLE();
+    }
+}
+
+/**
  * @brief Initialize the UART interfaces, turn ON a clock source, setup GPIO and interrupt vector
  * @param huart is the pointer to the data structure of the UART interface handler.
  */
