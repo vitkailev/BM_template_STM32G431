@@ -73,14 +73,14 @@ uint32_t getCRC(const void *data, uint32_t size) {
     return (state == HAL_CRC_STATE_READY) ? (result ^ 0xFFFFFFFFU) : 0;
 }
 
-uint16_t generateRandomNumbers(uint32_t *dst, uint16_t n) {
+uint16_t generateRandomNumbers(void *rngObj, uint32_t *dst, uint16_t n) {
     if (dst == NULL || n == 0)
         return 0;
 
     uint16_t i = 0;
     uint32_t value = 0;
     for (i = 0; i < n; ++i) {
-        if (HAL_RNG_GenerateRandomNumber(Mcu.handlers.rng, &value) == HAL_OK)
+        if (HAL_RNG_GenerateRandomNumber((RNG_HandleTypeDef *) rngObj, &value) == HAL_OK)
             *(dst + i) = value;
         else
             break;

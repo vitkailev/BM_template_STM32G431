@@ -25,7 +25,7 @@ const void *getUniqueID(void);
 
 uint32_t getCRC(const void *data, uint32_t size);
 
-uint16_t generateRandomNumbers(uint32_t *dst, uint16_t n);
+uint16_t generateRandomNumbers(void *rngObj, uint32_t *dst, uint16_t n);
 
 #ifdef __cplusplus
 }
