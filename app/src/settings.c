@@ -4,6 +4,7 @@
 
 static TIM_HandleTypeDef timer7Handler;
 static ADC_HandleTypeDef adcHandler;
+static DAC_HandleTypeDef dacHandler;
 static UART_HandleTypeDef usart1Handler;
 static UART_HandleTypeDef usart2Handler;
 static CRC_HandleTypeDef crcHandler;
@@ -170,9 +171,37 @@ static int settingADC(ADCDef *adc) {
         return SETTING_ERROR;
 
     // only ADC1
-    chInit.Channel = ADC_CHANNEL_VREFINT; // ADC_CHANNEL_TEMPSENSOR_ADC1
+    chInit.Channel = ADC_CHANNEL_TEMPSENSOR_ADC1; // ADC_CHANNEL_TEMPSENSOR_ADC1 or ADC_CHANNEL_VREFINT
     chInit.Rank = ADC_REGULAR_RANK_4;
     if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
+static int settingDAC(DACDef *dac) {
+    dac->obj = (void *) &dacHandler;
+    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) dac->obj;
+    dacInit->Instance = DAC1;
+    if (HAL_DAC_Init(dacInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    DAC_ChannelConfTypeDef chInit = {0};
+    chInit.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_AUTOMATIC;
+    chInit.DAC_DMADoubleDataMode = DISABLE;
+    chInit.DAC_SignedFormat = DISABLE;
+    chInit.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
+    chInit.DAC_Trigger = DAC_TRIGGER_SOFTWARE;
+    chInit.DAC_Trigger2 = DAC_TRIGGER_NONE;
+    chInit.DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE;
+    chInit.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_EXTERNAL;
+    chInit.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
+//    chInit.DAC_TrimmingValue =;
+//    chInit.DAC_SampleAndHoldConfig =;
+    if (HAL_DAC_ConfigChannel(dacInit, &chInit, DAC_CHANNEL_1) != HAL_OK)
+        return SETTING_ERROR;
+
+    if (HAL_DAC_ConfigChannel(dacInit, &chInit, DAC_CHANNEL_2) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
@@ -273,15 +302,27 @@ static int turnOnInterrupts(MCUDef *mcu) {
 }
 
 int initialization(MCUDef *mcu) {
-    if (settingSystemClock() == SETTING_SUCCESS &&
-        settingGPIO() == SETTING_SUCCESS &&
-        settingTimer(&mcu->timer_8kHz) == SETTING_SUCCESS &&
-        settingADC(&mcu->adc) == SETTING_SUCCESS &&
-        settingUART(mcu) == SETTING_SUCCESS &&
-        settingCRC(mcu) == SETTING_SUCCESS &&
-        settingRNG(mcu) == SETTING_SUCCESS &&
-        settingWDT(mcu) == SETTING_SUCCESS)
+    if (SETTING_SUCCESS != settingSystemClock()) {
+
+    } else if (SETTING_SUCCESS != settingGPIO()) {
+
+    } else if (SETTING_SUCCESS != settingTimer(&mcu->timer_8kHz)) {
+
+    } else if (SETTING_SUCCESS != settingADC(&mcu->adc)) {
+
+    } else if (SETTING_SUCCESS != settingDAC(&mcu->dac)) {
+
+    } else if (SETTING_SUCCESS != settingUART(mcu)) {
+
+    } else if (SETTING_SUCCESS != settingCRC(mcu)) {
+
+    } else if (SETTING_SUCCESS != settingRNG(mcu)) {
+
+    } else if (SETTING_SUCCESS != settingWDT(mcu)) {
+
+    } else {
         return turnOnInterrupts(mcu);
+    }
 
     return SETTING_ERROR;
 }
