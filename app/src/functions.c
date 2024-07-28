@@ -50,6 +50,18 @@ int readAnalogValues(ADCDef *adc) {
     return HAL_ADC_Start_IT((ADC_HandleTypeDef *) adc->obj);
 }
 
+int setDACOutput(DACDef *dac, uint8_t channel, uint32_t voltage) {
+    if (channel != DAC_CHANNEL_1 && channel != DAC_CHANNEL_2)
+        return -1;
+    if (voltage > 3000)
+        return -2;
+
+    voltage *= 4095;
+    dac->value = voltage / 3000;
+    HAL_DAC_SetValue((DAC_HandleTypeDef *) dac->obj, channel, DAC_ALIGN_12B_R, dac->value);
+    return HAL_DAC_Start((DAC_HandleTypeDef *) dac->obj, channel);
+}
+
 // Datasheet, DS12589 Rev. 6, Analog-to-digital converter (ADC), Internal voltage reference (Vrefint), page 30
 uint32_t getRealVrefint(void) {
     const uint16_t *calValue = (const uint16_t *) 0x1FFF75AA;

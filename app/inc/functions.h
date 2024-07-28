@@ -19,6 +19,8 @@ bool isADCFinished(const ADCDef *adc);
 
 int readAnalogValues(ADCDef *adc);
 
+int setDACOutput(DACDef *dac, uint8_t channel, uint32_t voltage);
+
 uint32_t getRealVrefint(void);
 
 const void *getUniqueID(void);
