@@ -137,6 +137,9 @@ void ADC1_2_IRQHandler(void) {
     HAL_ADC_IRQHandler((ADC_HandleTypeDef *) Mcu.adc.obj);
 }
 
+void TIM6_DAC_IRQHandler(void) {
+}
+
 void USART1_IRQHandler(void) {
     HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart1.obj);
 }
