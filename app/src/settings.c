@@ -193,7 +193,7 @@ static int settingDAC(DACDef *dac) {
     chInit.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
     chInit.DAC_Trigger = DAC_TRIGGER_SOFTWARE;
     chInit.DAC_Trigger2 = DAC_TRIGGER_NONE;
-    chInit.DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE;
+    chInit.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
     chInit.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_EXTERNAL;
     chInit.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
 //    chInit.DAC_TrimmingValue =;
@@ -201,7 +201,13 @@ static int settingDAC(DACDef *dac) {
     if (HAL_DAC_ConfigChannel(dacInit, &chInit, DAC_CHANNEL_1) != HAL_OK)
         return SETTING_ERROR;
 
+    if (HAL_DACEx_SelfCalibrate(dacInit, &chInit, DAC_CHANNEL_1) != HAL_OK)
+        return SETTING_ERROR;
+
     if (HAL_DAC_ConfigChannel(dacInit, &chInit, DAC_CHANNEL_2) != HAL_OK)
+        return SETTING_ERROR;
+
+    if (HAL_DACEx_SelfCalibrate(dacInit, &chInit, DAC_CHANNEL_2) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
