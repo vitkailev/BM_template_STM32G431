@@ -59,10 +59,9 @@ uint32_t getRealVrefint(void) {
     return result;
 }
 
-void readUniqueID(MCUDef *mcu) {
+const void *getUniqueID(void) {
     // RM0440 Reference manual, 48.1 Unique device ID, page 2108
-    const void *baseAddr = (const void *) 0x1FFF7590;
-    memcpy((void *) mcu->uniqueID, (const void *) baseAddr, UNIQUE_ID_SIZE);
+    return (const void *) 0x1FFF7590;
 }
 
 uint32_t getCRC(const void *data, uint32_t size) {

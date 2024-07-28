@@ -21,7 +21,7 @@ int readAnalogValues(ADCDef *adc);
 
 uint32_t getRealVrefint(void);
 
-void readUniqueID(MCUDef *mcu);
+const void *getUniqueID(void);
 
 uint32_t getCRC(const void *data, uint32_t size);
 
