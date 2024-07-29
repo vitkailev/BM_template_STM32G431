@@ -118,6 +118,7 @@ void PendSV_Handler(void) {
   */
 void SysTick_Handler(void) {
     Mcu.flags.isSysTickTriggered = true;
+    Mcu.runtime++;
 
     HAL_IncTick();
 }
@@ -138,6 +139,10 @@ void ADC1_2_IRQHandler(void) {
 }
 
 void TIM6_DAC_IRQHandler(void) {
+}
+
+void COMP1_2_3_IRQHandler(void) {
+    HAL_COMP_IRQHandler((COMP_HandleTypeDef *) Mcu.comp.obj);
 }
 
 void USART1_IRQHandler(void) {
