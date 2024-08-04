@@ -36,6 +36,7 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc) {
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp) {
     if (hcomp->Instance == ((COMP_HandleTypeDef *) Mcu.comp.obj)->Instance) {
         Mcu.comp.isTriggered = true;
+        Mcu.comp.state = (bool) HAL_COMP_GetOutputLevel((COMP_HandleTypeDef *) Mcu.comp.obj);
         Mcu.comp.errType = HAL_COMP_GetError((COMP_HandleTypeDef *) Mcu.comp.obj);
     }
 }
