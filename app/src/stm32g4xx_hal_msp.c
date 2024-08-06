@@ -103,7 +103,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc) {
             gpioInit.Pull = GPIO_NOPULL;
             HAL_GPIO_Init(GPIOB, &gpioInit);
 
-            HAL_NVIC_SetPriority(ADC1_2_IRQn, 2, 0);
+            HAL_NVIC_SetPriority(ADC1_2_IRQn, 3, 0);
             HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
         }
     }
@@ -142,8 +142,7 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac) {
         gpioInit.Mode = GPIO_MODE_ANALOG;
         gpioInit.Pull = GPIO_NOPULL;
         HAL_GPIO_Init(GPIOA, &gpioInit);
-    }
-    if (hdac->Instance == DAC3) {
+    } else if (hdac->Instance == DAC3) {
         __HAL_RCC_DAC3_CLK_ENABLE();
     }
 }
@@ -160,11 +159,41 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef *hdac) {
 
         HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4);
         HAL_GPIO_DeInit(GPIOA, GPIO_PIN_5);
-    }
-    if (hdac->Instance == DAC3) {
+    } else if (hdac->Instance == DAC3) {
         __HAL_RCC_DAC3_FORCE_RESET();
         __HAL_RCC_DAC3_RELEASE_RESET();
         __HAL_RCC_DAC3_CLK_DISABLE();
+    }
+}
+
+/**
+ * @brief Initialize the COMP module, turn ON a clock source, setup GPIO and interrupt vector
+ * @param hcomp is the pointer to the data structure of the COMP module handler.
+ */
+void HAL_COMP_MspInit(COMP_HandleTypeDef *hcomp) {
+    GPIO_InitTypeDef gpioInit = {0};
+
+    if (hcomp->Instance == COMP2) {
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        gpioInit.Pin = GPIO_PIN_7;
+        gpioInit.Mode = GPIO_MODE_ANALOG;
+        gpioInit.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(GPIOA, &gpioInit);
+
+        HAL_NVIC_SetPriority(COMP1_2_3_IRQn, 2, 0);
+        HAL_NVIC_EnableIRQ(COMP1_2_3_IRQn);
+    }
+}
+
+/**
+ * @brief DeInitialize the COMP module
+ * @param hcomp is the pointer to the data structure of the COMP module handler.
+ */
+void HAL_COMP_MspDeInit(COMP_HandleTypeDef *hcomp) {
+    if (hcomp->Instance == COMP2) {
+        HAL_GPIO_DeInit(GPIOA, GPIO_PIN_7);
+
+        HAL_NVIC_DisableIRQ(COMP1_2_3_IRQn);
     }
 }
 
@@ -186,7 +215,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart) {
         gpioInit.Alternate = GPIO_AF7_USART1;
         HAL_GPIO_Init(GPIOC, &gpioInit);
 
-        HAL_NVIC_SetPriority(USART1_IRQn, 3, 0);
+        HAL_NVIC_SetPriority(USART1_IRQn, 4, 0);
         HAL_NVIC_EnableIRQ(USART1_IRQn);
     } else if (huart->Instance == USART2) {
         __HAL_RCC_USART2_CLK_ENABLE();
@@ -199,7 +228,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart) {
         gpioInit.Alternate = GPIO_AF7_USART2;
         HAL_GPIO_Init(GPIOA, &gpioInit);
 
-        HAL_NVIC_SetPriority(USART2_IRQn, 3, 0);
+        HAL_NVIC_SetPriority(USART2_IRQn, 4, 0);
         HAL_NVIC_EnableIRQ(USART2_IRQn);
     }
 }
