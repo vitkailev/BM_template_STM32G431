@@ -53,7 +53,9 @@ void HAL_MspDeInit(void) {
  * @param htim is the pointer to the data structure of the base timer handler.
  */
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM7) {
+    if (htim->Instance == TIM6) {
+        __HAL_RCC_TIM6_CLK_ENABLE();
+    } else if (htim->Instance == TIM7) {
         __HAL_RCC_TIM7_CLK_ENABLE();
 
         HAL_NVIC_SetPriority(TIM7_IRQn, 5, 0);
@@ -66,7 +68,11 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
  * @param htim is the pointer to the data structure of the base timer handler.
  */
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM7) {
+    if (htim->Instance == TIM6) {
+        __HAL_RCC_TIM6_FORCE_RESET();
+        __HAL_RCC_TIM6_RELEASE_RESET();
+        __HAL_RCC_TIM6_CLK_DISABLE();
+    } else if (htim->Instance == TIM7) {
         __HAL_RCC_TIM7_FORCE_RESET();
         __HAL_RCC_TIM7_RELEASE_RESET();
         __HAL_RCC_TIM7_CLK_DISABLE();
