@@ -49,6 +49,50 @@ void HAL_MspDeInit(void) {
 }
 
 /**
+ * @brief Initialize the hardware accelerator of certain mathematical functions (CORDIC), turn ON a clock source
+ * @param hcordic is the pointer to the data structure of the CORDIC handler.
+ */
+void HAL_CORDIC_MspInit(CORDIC_HandleTypeDef *hcordic) {
+    if (hcordic->Instance == CORDIC) {
+        __HAL_RCC_CORDIC_CLK_ENABLE();
+    }
+}
+
+/**
+ * @brief DeInitialize the CORDIC
+ * @param hcordic is the pointer to the data structure of the base timer handler.
+ */
+void HAL_CORDIC_MspDeInit(CORDIC_HandleTypeDef *hcordic) {
+    if (hcordic->Instance == CORDIC) {
+        __HAL_RCC_CORDIC_FORCE_RESET();
+        __HAL_RCC_CORDIC_RELEASE_RESET();
+        __HAL_RCC_CORDIC_CLK_DISABLE();
+    }
+}
+
+/**
+ * @brief Initialize the filter mathematical accelerator (FMAC), turn ON a clock source
+ * @param hfmac is the pointer to the data structure of the FMAC handler.
+ */
+void HAL_FMAC_MspInit(FMAC_HandleTypeDef *hfmac) {
+    if (hfmac->Instance == FMAC) {
+        __HAL_RCC_FMAC_CLK_ENABLE();
+    }
+}
+
+/**
+ * @brief DeInitialize the FMAC
+ * @param hfmac is the pointer to the data structure of the FMAC handler.
+ */
+void HAL_FMAC_MspDeInit(FMAC_HandleTypeDef *hfmac) {
+    if (hfmac->Instance == FMAC) {
+        __HAL_RCC_FMAC_FORCE_RESET();
+        __HAL_RCC_FMAC_RELEASE_RESET();
+        __HAL_RCC_FMAC_CLK_DISABLE();
+    }
+}
+
+/**
  * @brief Initialize the base timers, turn ON a clock source and setup interrupt vector
  * @param htim is the pointer to the data structure of the base timer handler.
  */
