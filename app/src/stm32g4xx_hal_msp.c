@@ -101,9 +101,6 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
         __HAL_RCC_TIM6_CLK_ENABLE();
     } else if (htim->Instance == TIM7) {
         __HAL_RCC_TIM7_CLK_ENABLE();
-
-        HAL_NVIC_SetPriority(TIM7_IRQn, 5, 0);
-        HAL_NVIC_EnableIRQ(TIM7_IRQn);
     } else if (htim->Instance == TIM15) {
         __HAL_RCC_TIM15_CLK_ENABLE();
 
@@ -125,8 +122,6 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
         __HAL_RCC_TIM7_FORCE_RESET();
         __HAL_RCC_TIM7_RELEASE_RESET();
         __HAL_RCC_TIM7_CLK_DISABLE();
-
-        HAL_NVIC_DisableIRQ(TIM7_IRQn);
     } else if (htim->Instance == TIM15) {
         __HAL_RCC_TIM15_FORCE_RESET();
         __HAL_RCC_TIM15_RELEASE_RESET();
