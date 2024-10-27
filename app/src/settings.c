@@ -67,12 +67,12 @@ static int settingGPIO(void) {
     HAL_GPIO_Init(GPIOC, &gpioInit);
 
     // LED
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    gpioInit.Pin = GPIO_PIN_5;
-    gpioInit.Mode = GPIO_MODE_OUTPUT_PP;
-    gpioInit.Pull = GPIO_PULLDOWN;
-    gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOA, &gpioInit);
+//    __HAL_RCC_GPIOA_CLK_ENABLE();
+//    gpioInit.Pin = GPIO_PIN_5;
+//    gpioInit.Mode = GPIO_MODE_OUTPUT_PP;
+//    gpioInit.Pull = GPIO_PULLDOWN;
+//    gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
+//    HAL_GPIO_Init(GPIOA, &gpioInit);
 
     // GPIO: D2, D7, D8
     __HAL_RCC_GPIOA_CLK_ENABLE();
