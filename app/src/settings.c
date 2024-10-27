@@ -98,9 +98,9 @@ static int settingTimer(TimerDef *timer) {
     // APB1Divider != 1
     sourceClock1 *= 2;
 
-    timer->obj = (void *) &timer7Handler;
+    timer->obj = (void *) &timer15Handler;
     TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->obj;
-    tim->Instance = TIM7;
+    tim->Instance = TIM15;
     tim->Init.Period = 100U - 1U;
     tim->Init.Prescaler = sourceClock1 / timer->freq / 100U - 1U;
     tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -109,6 +109,13 @@ static int settingTimer(TimerDef *timer) {
     tim->Init.RepetitionCounter = 0;
 
     if (HAL_TIM_Base_Init(tim) != HAL_OK)
+        return SETTING_ERROR;
+
+    TIM_MasterConfigTypeDef masterConf = {0};
+    masterConf.MasterOutputTrigger = TIM_TRGO_UPDATE;
+    masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
+    masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
