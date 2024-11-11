@@ -44,6 +44,7 @@ enum GeneratorModes {
 
 typedef struct {
     volatile bool isSysTickTriggered;
+
     bool isWDTTriggered;
 } FlagsDef;
 
@@ -75,7 +76,7 @@ typedef struct {
     uint16_t rawValues[NUMBER_ADC_CHANNELS]; // relative values
     uint16_t value[NUMBER_ADC_CHANNELS]; // mV
 
-    void *obj;
+    void *handler;
 } ADCDef;
 
 typedef struct {
@@ -113,16 +114,18 @@ typedef struct {
 typedef struct {
     FlagsDef flags;
 
-    uint32_t runtime;
-    uint8_t uniqueID[UNIQUE_ID_SIZE];
+    volatile uint32_t runtime;
+    int16_t temp; // C
 
-    PortDef led;
-    PortDef button;
+    PortDef led[NUMBER_LEDS];
+    PortDef button[NUMBER_BUTTONS];
     PortDef oscPins[NUMBER_OSC_CHANNELS];
 
     HandlersDef handlers;
-    TimerDef timer_8kHz;
+    TimerDef measTimer;
     ADCDef adc;
+    GeneratorDef generator;
+    CompDef comp;
     UARTDef uart1;
     UARTDef uart2;
 } MCUDef;
