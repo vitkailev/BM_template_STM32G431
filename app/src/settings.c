@@ -125,8 +125,8 @@ static int settingTimer(TimerDef *timer) {
 }
 
 static int settingADC(ADCDef *adc) {
-    adc->obj = (void *) &adcHandler;
-    ADC_HandleTypeDef *adcInit = (ADC_HandleTypeDef *) adc->obj;
+    adc->handler = (void *) &adcHandler;
+    ADC_HandleTypeDef *adcInit = (ADC_HandleTypeDef *) adc->handler;
     adcInit->Instance = ADC1;
     adcInit->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
     adcInit->Init.Resolution = ADC_RESOLUTION_12B;
@@ -155,7 +155,7 @@ static int settingADC(ADCDef *adc) {
 
     ADC_ChannelConfTypeDef chInit = {0};
 
-    chInit.SamplingTime = ADC_SAMPLETIME_47CYCLES_5;
+    chInit.SamplingTime = ADC_SAMPLETIME_92CYCLES_5;
     chInit.SingleDiff = ADC_SINGLE_ENDED;
     chInit.OffsetNumber = ADC_OFFSET_NONE;
     chInit.Offset = 0;
@@ -181,7 +181,8 @@ static int settingADC(ADCDef *adc) {
         return SETTING_ERROR;
 
     // only ADC1
-    chInit.Channel = ADC_CHANNEL_TEMPSENSOR_ADC1; // ADC_CHANNEL_TEMPSENSOR_ADC1 or ADC_CHANNEL_VREFINT
+    // ADC_CHANNEL_TEMPSENSOR_ADC1 or ADC_CHANNEL_VREFINT
+    chInit.Channel = ADC_CHANNEL_TEMPSENSOR_ADC1;
     chInit.Rank = ADC_REGULAR_RANK_4;
     if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
         return SETTING_ERROR;
