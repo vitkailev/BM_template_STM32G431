@@ -21,6 +21,8 @@ bool isADCFinished(const ADCDef *adc);
 
 int readAnalogValues(ADCDef *adc);
 
+int setCompThresholdLevel(CompDef *comp, uint32_t voltage);
+
 int setDACOutput(DACDef *dac, uint8_t channel, uint32_t voltage);
 
 uint32_t getRealVrefint(void);

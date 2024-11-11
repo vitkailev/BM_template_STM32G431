@@ -52,7 +52,11 @@ int readAnalogValues(ADCDef *adc) {
     adc->isProcessing = true;
     adc->errType = 0;
     adc->idx = 0;
-    return HAL_ADC_Start_IT((ADC_HandleTypeDef *) adc->obj);
+    return HAL_ADC_Start_IT((ADC_HandleTypeDef *) adc->handler);
+}
+
+int setCompThresholdLevel(CompDef *comp, uint32_t voltage) {
+    return setDACOutput(&comp->dac, DAC_CHANNEL_2, voltage);
 }
 
 int setDACOutput(DACDef *dac, uint8_t channel, uint32_t voltage) {
