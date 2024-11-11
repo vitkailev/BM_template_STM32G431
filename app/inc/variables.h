@@ -78,6 +78,32 @@ typedef struct {
 } ADCDef;
 
 typedef struct {
+    uint8_t mode;
+    uint32_t value;
+    DAC_ChannelConfTypeDef channel;
+
+    void *handler;
+} DACDef;
+
+typedef struct {
+    bool isProcessing;
+    uint8_t mode;
+
+    DACDef dac;
+    TimerDef timer_1;
+    TimerDef timer_2;
+} GeneratorDef;
+
+typedef struct {
+    volatile bool isTriggered;
+    volatile bool state;
+    volatile uint32_t errType;
+
+    DACDef dac;
+    void *handler;
+} CompDef;
+
+typedef struct {
     void *crc;
     void *rng;
     void *wdt;
