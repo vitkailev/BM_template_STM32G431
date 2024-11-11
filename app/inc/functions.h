@@ -25,6 +25,8 @@ int setCompThresholdLevel(CompDef *comp, uint32_t voltage);
 
 int setDACOutput(DACDef *dac, uint8_t channel, uint32_t voltage);
 
+int changeGeneratorMode(GeneratorDef *gen, uint8_t mode);
+
 uint32_t getRealVrefint(void);
 
 const void *getUniqueID(void);
