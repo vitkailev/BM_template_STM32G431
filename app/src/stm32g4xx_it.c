@@ -131,7 +131,7 @@ void SysTick_Handler(void) {
 /******************************************************************************/
 
 void ADC1_2_IRQHandler(void) {
-    HAL_ADC_IRQHandler((ADC_HandleTypeDef *) Mcu.adc.obj);
+    HAL_ADC_IRQHandler((ADC_HandleTypeDef *) Mcu.adc.handler);
 }
 
 void TIM6_DAC_IRQHandler(void) {
@@ -141,11 +141,11 @@ void TIM7_IRQHandler(void) {
 }
 
 void TIM1_BRK_TIM15_IRQHandler(void) {
-    HAL_TIM_IRQHandler((TIM_HandleTypeDef *) Mcu.timer_8kHz.obj);
+    HAL_TIM_IRQHandler((TIM_HandleTypeDef *) Mcu.measTimer.handler);
 }
 
 void COMP1_2_3_IRQHandler(void) {
-    HAL_COMP_IRQHandler((COMP_HandleTypeDef *) Mcu.comp.obj);
+    HAL_COMP_IRQHandler((COMP_HandleTypeDef *) Mcu.comp.handler);
 }
 
 void USART1_IRQHandler(void) {

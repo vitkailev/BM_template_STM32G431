@@ -3,14 +3,14 @@
 #include "variables.h"
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == ((TIM_HandleTypeDef *) Mcu.timer_8kHz.obj)->Instance) {
-        Mcu.timer_8kHz.isTriggered = true;
+    if (htim->Instance == ((TIM_HandleTypeDef *) Mcu.measTimer.handler)->Instance) {
+        Mcu.measTimer.isTriggered = true;
     }
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-    if (hadc->Instance == ((ADC_HandleTypeDef *) Mcu.adc.obj)->Instance) {
-        uint32_t value = HAL_ADC_GetValue((ADC_HandleTypeDef *) Mcu.adc.obj);
+    if (hadc->Instance == ((ADC_HandleTypeDef *) Mcu.adc.handler)->Instance) {
+        uint32_t value = HAL_ADC_GetValue((ADC_HandleTypeDef *) Mcu.adc.handler);
 
         if (Mcu.adc.idx >= NUMBER_ADC_CHANNELS)
             Mcu.adc.idx = 0;
@@ -21,23 +21,23 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
             Mcu.adc.isProcessing = false;
             Mcu.adc.isFinished = true;
         } else
-            HAL_ADC_Start_IT((ADC_HandleTypeDef *) Mcu.adc.obj);
+            HAL_ADC_Start_IT((ADC_HandleTypeDef *) Mcu.adc.handler);
     }
 }
 
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc) {
-    if (hadc->Instance == ((ADC_HandleTypeDef *) Mcu.adc.obj)->Instance) {
+    if (hadc->Instance == ((ADC_HandleTypeDef *) Mcu.adc.handler)->Instance) {
         Mcu.adc.isProcessing = false;
-        Mcu.adc.errType = HAL_ADC_GetError((ADC_HandleTypeDef *) Mcu.adc.obj);
+        Mcu.adc.errType = HAL_ADC_GetError((ADC_HandleTypeDef *) Mcu.adc.handler);
         Mcu.adc.errors++;
     }
 }
 
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp) {
-    if (hcomp->Instance == ((COMP_HandleTypeDef *) Mcu.comp.obj)->Instance) {
+    if (hcomp->Instance == ((COMP_HandleTypeDef *) Mcu.comp.handler)->Instance) {
         Mcu.comp.isTriggered = true;
-        Mcu.comp.state = (bool) HAL_COMP_GetOutputLevel((COMP_HandleTypeDef *) Mcu.comp.obj);
-        Mcu.comp.errType = HAL_COMP_GetError((COMP_HandleTypeDef *) Mcu.comp.obj);
+        Mcu.comp.state = (bool) HAL_COMP_GetOutputLevel((COMP_HandleTypeDef *) Mcu.comp.handler);
+        Mcu.comp.errType = HAL_COMP_GetError((COMP_HandleTypeDef *) Mcu.comp.handler);
     }
 }
 

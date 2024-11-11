@@ -25,76 +25,52 @@ int main(void) {
     return 1;
 }
 
-static int initPeripheral(void) {
-
-    Mcu.button.duration = 50; // ms
-    Mcu.button.pin = GPIO_PIN_13;
-    Mcu.button.obj = GPIOC;
-    Mcu.led.pin = GPIO_PIN_5;
-    Mcu.led.obj = GPIOA;
-    Mcu.oscPins[OSC_CHANNEL_1].pin = GPIO_PIN_10; // D2
-    Mcu.oscPins[OSC_CHANNEL_1].obj = GPIOA;
-    Mcu.oscPins[OSC_CHANNEL_2].pin = GPIO_PIN_5; // D4
-    Mcu.oscPins[OSC_CHANNEL_2].obj = GPIOB;
-    Mcu.oscPins[OSC_CHANNEL_3].pin = GPIO_PIN_8; // D7
-    Mcu.oscPins[OSC_CHANNEL_3].obj = GPIOA;
-    Mcu.oscPins[OSC_CHANNEL_4].pin = GPIO_PIN_9; // D8
-    Mcu.oscPins[OSC_CHANNEL_4].obj = GPIOA;
-    Mcu.timer_8kHz.freq = 8000; // Hz
-
-    if (initialization(&Mcu) == SETTING_SUCCESS) {
-        readUniqueID(&Mcu);
-        UART_init(&Mcu.uart1);
-        UART_init(&Mcu.uart2);
-    }
-
-    return 0;
-}
-
 static void application(void) {
     if (Mcu.flags.isWDTTriggered) {
         Mcu.flags.isWDTTriggered = false;
-
-        changePinState(&Mcu.led, true);
     }
 
     if (Mcu.flags.isSysTickTriggered) {
         Mcu.flags.isSysTickTriggered = false;
 
-        Mcu.runtime++;
-        checkPinState(&Mcu.button);
-
-        if ((Mcu.runtime % 10) == 0)
-            readAnalogValues(&Mcu.adc);
-
+        checkPinState(&Mcu.button[BUTTON_1]);
         changePinState(&Mcu.oscPins[OSC_CHANNEL_1], !getPinState(&Mcu.oscPins[OSC_CHANNEL_1]));
     }
 
-    if (Mcu.timer_8kHz.isTriggered) {
-        Mcu.timer_8kHz.isTriggered = false;
+    if (Mcu.measTimer.isTriggered) {
+        Mcu.measTimer.isTriggered = false;
 
+        readAnalogValues(&Mcu.adc);
         changePinState(&Mcu.oscPins[OSC_CHANNEL_2], !getPinState(&Mcu.oscPins[OSC_CHANNEL_2]));
     }
 
-    if (isPinTriggered(&Mcu.button)) {
-        Mcu.button.isTriggered = false;
+    if (isPinTriggered(&Mcu.button[BUTTON_1])) {
+        Mcu.button[BUTTON_1].isTriggered = false;
+
     }
 
     if (isADCFinished(&Mcu.adc)) {
         Mcu.adc.isFinished = false;
 
-        uint32_t value = 0;
-        for (uint8_t i = 0; i < NUMBER_ADC_CHANNELS; ++i) {
+        int32_t value = 0;
+        for (size_t i = 0; i < NUMBER_ADC_CHANNELS; ++i) {
             value = Mcu.adc.rawValues[i];
-            if (i == NUMBER_ADC_CHANNELS - 1) {
-                value = getRealVrefint();
-//                value = __LL_ADC_CALC_TEMPERATURE(3300, value, LL_ADC_RESOLUTION_12B);
+            if (i == ANALOG_TEMP_VREF) {
+                Mcu.temp = (int16_t) __LL_ADC_CALC_TEMPERATURE(VREFP, value, LL_ADC_RESOLUTION_12B);
+                value = 0;
             } else {
-                value *= VDD_VALUE;
+                value *= VREFP;
                 value /= 4095;
             }
             Mcu.adc.value[i] = value;
         }
+    }
+
+    if (Mcu.comp.isTriggered) {
+        Mcu.comp.isTriggered = false;
+
+        if (Mcu.comp.errType == 0)
+            changePinState(&Mcu.oscPins[OSC_CHANNEL_3], Mcu.comp.state);
     }
 
     UART_update(&Mcu.uart1, HAL_GetTick());
@@ -106,4 +82,30 @@ static void application(void) {
     if (UART_isHaveData(&Mcu.uart2)) {
         Mcu.uart2.isHaveData = false;
     }
+}
+
+static int initPeripheral(void) {
+
+    Mcu.led[LED_GREEN].pin = GPIO_PIN_5;
+    Mcu.led[LED_GREEN].obj = GPIOA;
+    Mcu.button[BUTTON_1].duration = 50; // ms
+    Mcu.button[BUTTON_1].pin = GPIO_PIN_13;
+    Mcu.button[BUTTON_1].obj = GPIOC;
+    Mcu.oscPins[OSC_CHANNEL_1].pin = GPIO_PIN_10; // D2
+    Mcu.oscPins[OSC_CHANNEL_1].obj = GPIOA;
+    Mcu.oscPins[OSC_CHANNEL_2].pin = GPIO_PIN_5; // D4
+    Mcu.oscPins[OSC_CHANNEL_2].obj = GPIOB;
+    Mcu.oscPins[OSC_CHANNEL_3].pin = GPIO_PIN_8; // D7
+    Mcu.oscPins[OSC_CHANNEL_3].obj = GPIOA;
+    Mcu.oscPins[OSC_CHANNEL_4].pin = GPIO_PIN_9; // D8
+    Mcu.oscPins[OSC_CHANNEL_4].obj = GPIOA;
+
+    if (initialization(&Mcu) == SETTING_SUCCESS) {
+        setCompThresholdLevel(&Mcu.comp, 2137);
+        HAL_COMP_Start((COMP_HandleTypeDef *) Mcu.comp.handler);
+
+        UART_init(&Mcu.uart1);
+        UART_init(&Mcu.uart2);
+    }
+    return 0;
 }
