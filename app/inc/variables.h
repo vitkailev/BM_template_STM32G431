@@ -12,7 +12,8 @@ extern "C" {
 #include "uart.h"
 
 enum Constants {
-    UNIQUE_ID_SIZE = 12U,
+    VREFP = 3250, // mV
+    UNIQUE_ID_SIZE = 12, // 96 bits
 
     LED_GREEN = 0,
     NUMBER_LEDS,
@@ -27,7 +28,18 @@ enum Constants {
     OSC_CHANNEL_4,
     NUMBER_OSC_CHANNELS,
 
-    NUMBER_ADC_CHANNELS = 4U // 3 input pins + Vref or Vtemp
+    ANALOG_IN_1 = 0,
+    ANALOG_IN_2,
+    ANALOG_IN_3,
+    ANALOG_TEMP_VREF,
+    NUMBER_ADC_CHANNELS
+};
+
+enum GeneratorModes {
+    GENERATE_TRIANGLE,
+    GENERATE_NOISE,
+    GENERATE_SAWTOOTH,
+    NUMBER_GEN_MODES
 };
 
 typedef struct {
