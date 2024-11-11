@@ -2,9 +2,13 @@
 
 #include "settings.h"
 
+static TIM_HandleTypeDef timer6Handler;
 static TIM_HandleTypeDef timer7Handler;
+static TIM_HandleTypeDef timer15Handler;
 static ADC_HandleTypeDef adcHandler;
-static DAC_HandleTypeDef dacHandler;
+static DAC_HandleTypeDef dac1Handler;
+static DAC_HandleTypeDef dac3Handler;
+static COMP_HandleTypeDef compHandler;
 static UART_HandleTypeDef usart1Handler;
 static UART_HandleTypeDef usart2Handler;
 static CRC_HandleTypeDef crcHandler;
@@ -190,35 +194,126 @@ static int settingADC(ADCDef *adc) {
     return SETTING_SUCCESS;
 }
 
-static int settingDAC(DACDef *dac) {
-    dac->obj = (void *) &dacHandler;
-    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) dac->obj;
+static int settingGenerator(GeneratorDef *gen) {
+    gen->dac.handler = (void *) &dac1Handler;
+    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) gen->dac.handler;
     dacInit->Instance = DAC1;
     if (HAL_DAC_Init(dacInit) != HAL_OK)
         return SETTING_ERROR;
 
-    DAC_ChannelConfTypeDef chInit = {0};
-    chInit.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_AUTOMATIC;
-    chInit.DAC_DMADoubleDataMode = DISABLE;
-    chInit.DAC_SignedFormat = DISABLE;
-    chInit.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
-    chInit.DAC_Trigger = DAC_TRIGGER_SOFTWARE;
-    chInit.DAC_Trigger2 = DAC_TRIGGER_NONE;
-    chInit.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
-    chInit.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_EXTERNAL;
-    chInit.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
+    gen->dac.channel.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_AUTOMATIC;
+    gen->dac.channel.DAC_DMADoubleDataMode = DISABLE;
+    gen->dac.channel.DAC_SignedFormat = DISABLE;
+    gen->dac.channel.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
+    gen->dac.channel.DAC_Trigger = DAC_TRIGGER_SOFTWARE;
+    gen->dac.channel.DAC_Trigger2 = DAC_TRIGGER_NONE;
+    gen->dac.channel.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
+    gen->dac.channel.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_EXTERNAL;
+    gen->dac.channel.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
 //    chInit.DAC_TrimmingValue =;
 //    chInit.DAC_SampleAndHoldConfig =;
-    if (HAL_DAC_ConfigChannel(dacInit, &chInit, DAC_CHANNEL_1) != HAL_OK)
+
+    // channel 1 - DC - manual changed voltage
+    if (HAL_DAC_ConfigChannel(dacInit, &gen->dac.channel, DAC_CHANNEL_1) != HAL_OK)
         return SETTING_ERROR;
 
-    if (HAL_DACEx_SelfCalibrate(dacInit, &chInit, DAC_CHANNEL_1) != HAL_OK)
+    if (HAL_DACEx_SelfCalibrate(dacInit, &gen->dac.channel, DAC_CHANNEL_1) != HAL_OK)
         return SETTING_ERROR;
 
-    if (HAL_DAC_ConfigChannel(dacInit, &chInit, DAC_CHANNEL_2) != HAL_OK)
+    // channel 2 - Timer triggered signal generation, default values
+    gen->dac.channel.DAC_Trigger = DAC_TRIGGER_NONE;
+    gen->dac.channel.DAC_Trigger2 = DAC_TRIGGER_NONE;
+
+    uint32_t sourceClock = HAL_RCC_GetPCLK1Freq();
+    // APB1Divider != 1
+    sourceClock *= 2;
+
+    TIM_HandleTypeDef *tim = NULL;
+    TIM_MasterConfigTypeDef masterConf = {0};
+
+    gen->timer_1.handler = (void *) &timer6Handler;
+    gen->timer_1.freq = 0; // Hz, dynamic
+    gen->timer_1.prescaler = 0;
+
+    tim = (TIM_HandleTypeDef *) gen->timer_1.handler;
+    tim->Instance = TIM6;
+    tim->Init.Period = 4U - 1U;
+    tim->Init.Prescaler = gen->timer_1.prescaler;
+    tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    tim->Init.CounterMode = TIM_COUNTERMODE_UP;
+    tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    tim->Init.RepetitionCounter = 0;
+
+    if (HAL_TIM_Base_Init(tim) != HAL_OK)
         return SETTING_ERROR;
 
-    if (HAL_DACEx_SelfCalibrate(dacInit, &chInit, DAC_CHANNEL_2) != HAL_OK)
+    masterConf.MasterOutputTrigger = TIM_TRGO_UPDATE;
+    masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
+    masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
+        return SETTING_ERROR;
+
+    gen->timer_2.handler = (void *) &timer7Handler;
+    gen->timer_2.freq = 9000; // Hz, dynamic
+    gen->timer_2.prescaler = sourceClock / gen->timer_2.freq / 100U - 1U;
+
+    tim = (TIM_HandleTypeDef *) gen->timer_2.handler;
+    tim->Instance = TIM7;
+    tim->Init.Period = 100U - 1U;
+    tim->Init.Prescaler = gen->timer_2.prescaler;
+    tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    tim->Init.CounterMode = TIM_COUNTERMODE_UP;
+    tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    tim->Init.RepetitionCounter = 0;
+
+    if (HAL_TIM_Base_Init(tim) != HAL_OK)
+        return SETTING_ERROR;
+
+    masterConf.MasterOutputTrigger = TIM_TRGO_UPDATE;
+    masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
+    masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
+static int settingComp(CompDef *comp) {
+    comp->dac.handler = (void *) &dac3Handler;
+    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) comp->dac.handler;
+    dacInit->Instance = DAC3;
+    if (HAL_DAC_Init(dacInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    comp->dac.channel.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_AUTOMATIC;
+    comp->dac.channel.DAC_DMADoubleDataMode = DISABLE;
+    comp->dac.channel.DAC_SignedFormat = DISABLE;
+    comp->dac.channel.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
+    comp->dac.channel.DAC_Trigger = DAC_TRIGGER_SOFTWARE;
+    comp->dac.channel.DAC_Trigger2 = DAC_TRIGGER_NONE;
+    comp->dac.channel.DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE;
+    comp->dac.channel.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_INTERNAL;
+    comp->dac.channel.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
+//    chInit.DAC_TrimmingValue =;
+//    chInit.DAC_SampleAndHoldConfig =;
+
+    if (HAL_DAC_ConfigChannel(dacInit, &comp->dac.channel, DAC_CHANNEL_2) != HAL_OK)
+        return SETTING_ERROR;
+
+    if (HAL_DACEx_SelfCalibrate(dacInit, &comp->dac.channel, DAC_CHANNEL_2) != HAL_OK)
+        return SETTING_ERROR;
+
+    comp->handler = (void *) &compHandler;
+    COMP_HandleTypeDef *compInit = (COMP_HandleTypeDef *) comp->handler;
+    compInit->Instance = COMP2;
+    compInit->Init.InputPlus = COMP_INPUT_PLUS_IO1; // PA7
+    compInit->Init.InputMinus = COMP_INPUT_MINUS_DAC3_CH2;
+    compInit->Init.Hysteresis = COMP_HYSTERESIS_40MV;
+    compInit->Init.OutputPol = COMP_OUTPUTPOL_NONINVERTED;
+    compInit->Init.BlankingSrce = COMP_BLANKINGSRC_NONE;
+    compInit->Init.TriggerMode = COMP_TRIGGERMODE_IT_RISING_FALLING;
+
+    if (HAL_COMP_Init(compInit) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
@@ -310,10 +405,11 @@ static int settingWDT(MCUDef *mcu) {
 }
 
 static int turnOnInterrupts(MCUDef *mcu) {
-    if (HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) mcu->timer_8kHz.obj) == HAL_OK &&
+    if (HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) mcu->measTimer.handler) == HAL_OK &&
         HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart1.obj, &mcu->uart1.rxByte, 1U) == HAL_OK &&
-        HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart2.obj, &mcu->uart2.rxByte, 1U) == HAL_OK)
+        HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart2.obj, &mcu->uart2.rxByte, 1U) == HAL_OK) {
         return SETTING_SUCCESS;
+    }
 
     return SETTING_ERROR;
 }
@@ -323,11 +419,13 @@ int initialization(MCUDef *mcu) {
 
     } else if (SETTING_SUCCESS != settingGPIO()) {
 
-    } else if (SETTING_SUCCESS != settingTimer(&mcu->timer_8kHz)) {
+    } else if (SETTING_SUCCESS != settingTimer(&mcu->measTimer)) {
 
     } else if (SETTING_SUCCESS != settingADC(&mcu->adc)) {
 
-    } else if (SETTING_SUCCESS != settingDAC(&mcu->dac)) {
+    } else if (SETTING_SUCCESS != settingGenerator(&mcu->generator)) {
+
+    } else if (SETTING_SUCCESS != settingComp(&mcu->comp)) {
 
     } else if (SETTING_SUCCESS != settingUART(mcu)) {
 
