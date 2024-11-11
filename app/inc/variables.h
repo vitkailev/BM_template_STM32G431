@@ -60,8 +60,9 @@ typedef struct {
 
 typedef struct {
     volatile bool isTriggered;
-    uint16_t freq;
-    void *obj;
+    uint16_t prescaler;
+    uint32_t freq;
+    void *handler;
 } TimerDef;
 
 typedef struct {
