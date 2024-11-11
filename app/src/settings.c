@@ -94,15 +94,18 @@ static int settingGPIO(void) {
 }
 
 static int settingTimer(TimerDef *timer) {
-    uint32_t sourceClock1 = HAL_RCC_GetPCLK1Freq();
-    // APB1Divider != 1
-    sourceClock1 *= 2;
+    uint32_t sourceClock = HAL_RCC_GetPCLK2Freq();
+    // APB2Divider != 1
+    sourceClock *= 2;
 
-    timer->obj = (void *) &timer15Handler;
-    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->obj;
+    timer->handler = (void *) &timer15Handler;
+    timer->freq = 4000U; // Hz
+    timer->prescaler = sourceClock / timer->freq / 100U - 1U;
+
+    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->handler;
     tim->Instance = TIM15;
     tim->Init.Period = 100U - 1U;
-    tim->Init.Prescaler = sourceClock1 / timer->freq / 100U - 1U;
+    tim->Init.Prescaler = timer->prescaler;
     tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     tim->Init.CounterMode = TIM_COUNTERMODE_UP;
     tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
