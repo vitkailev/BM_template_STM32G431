@@ -15,6 +15,8 @@ bool getPinState(const PortDef *port);
 
 void checkPinState(PortDef *port);
 
+void setTimerPrescaler(TimerDef *tim, uint16_t value);
+
 bool isADCFinished(const ADCDef *adc);
 
 int readAnalogValues(ADCDef *adc);

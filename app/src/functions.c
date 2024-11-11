@@ -36,6 +36,11 @@ void checkPinState(PortDef *port) {
     }
 }
 
+void setTimerPrescaler(TimerDef *tim, uint16_t value) {
+    tim->prescaler = value;
+    __HAL_TIM_SET_PRESCALER((TIM_HandleTypeDef *) tim->handler, tim->prescaler);
+}
+
 bool isADCFinished(const ADCDef *adc) {
     return adc->isFinished;
 }
