@@ -4,6 +4,7 @@
 
 static TIM_HandleTypeDef timer6Handler;
 static TIM_HandleTypeDef timer7Handler;
+static TIM_HandleTypeDef timer8Handler;
 static TIM_HandleTypeDef timer15Handler;
 static ADC_HandleTypeDef adcHandler;
 static DAC_HandleTypeDef dac1Handler;
@@ -123,6 +124,79 @@ static int settingTimer(TimerDef *timer) {
     masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
     masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
     if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
+static int settingPWM(TimerDef *timer) {
+    uint32_t sourceClock = HAL_RCC_GetPCLK2Freq();
+    // APB2Divider != 1
+    sourceClock *= 2;
+
+    timer->handler = (void *) &timer8Handler;
+    timer->freq = 10000U; // Hz
+    timer->prescaler = sourceClock / timer->freq / 100U - 1U;
+
+    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->handler;
+    tim->Instance = TIM8;
+    tim->Init.Period = 100U - 1U;
+    tim->Init.Prescaler = timer->prescaler;
+    tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    tim->Init.CounterMode = TIM_COUNTERMODE_UP;
+    tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    tim->Init.RepetitionCounter = 0;
+
+    if (HAL_TIM_PWM_Init(tim) != HAL_OK)
+        return SETTING_ERROR;
+
+    TIM_MasterConfigTypeDef masterConf = {0};
+    masterConf.MasterOutputTrigger = TIM_TRGO_UPDATE;
+    masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
+    masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
+        return SETTING_ERROR;
+
+    TIM_OC_InitTypeDef pwm = {0};
+    pwm.OCMode = TIM_OCMODE_PWM1;
+    pwm.OCPolarity = TIM_OCPOLARITY_HIGH;
+    pwm.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+    pwm.OCFastMode = TIM_OCFAST_DISABLE;
+    pwm.OCIdleState = TIM_OCIDLESTATE_RESET;
+    pwm.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+
+    pwm.Pulse = 5;
+    if (HAL_TIM_PWM_ConfigChannel(tim, &pwm, TIM_CHANNEL_1) != HAL_OK)
+        return SETTING_ERROR;
+    pwm.Pulse = 5;
+    if (HAL_TIM_PWM_ConfigChannel(tim, &pwm, TIM_CHANNEL_2) != HAL_OK)
+        return SETTING_ERROR;
+
+    if (HAL_TIMEx_ConfigDeadTime(tim, 64) != HAL_OK)
+        return SETTING_ERROR;
+
+    TIMEx_BreakInputConfigTypeDef breakInit = {0};
+    breakInit.Source = TIM_BREAKINPUTSOURCE_BKIN;
+    breakInit.Polarity = TIM_BREAKINPUTSOURCE_POLARITY_HIGH;
+    breakInit.Enable = TIM_BREAKINPUTSOURCE_ENABLE;
+    if (HAL_TIMEx_ConfigBreakInput(tim, TIM_BREAKINPUT_BRK, &breakInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    TIM_BreakDeadTimeConfigTypeDef breakDT = {0};
+    breakDT.OffStateRunMode = TIM_OSSR_ENABLE;
+    breakDT.OffStateIDLEMode = TIM_OSSI_ENABLE;
+    breakDT.LockLevel = TIM_LOCKLEVEL_OFF;
+    breakDT.DeadTime = 0;
+    breakDT.BreakState = TIM_BREAK_ENABLE;
+    breakDT.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+    breakDT.BreakFilter = 0;
+    breakDT.BreakAFMode = TIM_BREAK_AFMODE_INPUT;
+    breakDT.Break2State = TIM_BREAK2_DISABLE;
+    breakDT.Break2Filter = 0;
+    breakDT.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
+    breakDT.Break2AFMode = TIM_BREAK2_AFMODE_INPUT;
+    breakDT.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+    if (HAL_TIMEx_ConfigBreakDeadTime(tim, &breakDT) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
@@ -420,6 +494,8 @@ int initialization(MCUDef *mcu) {
     } else if (SETTING_SUCCESS != settingGPIO()) {
 
     } else if (SETTING_SUCCESS != settingTimer(&mcu->measTimer)) {
+
+    } else if (SETTING_SUCCESS != settingPWM(&mcu->pwmTimer)) {
 
     } else if (SETTING_SUCCESS != settingADC(&mcu->adc)) {
 
