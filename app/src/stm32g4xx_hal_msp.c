@@ -132,6 +132,52 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
 }
 
 /**
+ * @brief Initialize the PWM timer mode, turn ON a clock source and setup GPIOs
+ * @param htim is the pointer to the data structure of the timer handler.
+ */
+void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim) {
+    GPIO_InitTypeDef gpioInit = {0};
+
+    if (htim->Instance == TIM8) {
+        __HAL_RCC_TIM8_CLK_ENABLE();
+
+        __HAL_RCC_GPIOB_CLK_ENABLE();
+        __HAL_RCC_GPIOC_CLK_ENABLE();
+
+        gpioInit.Mode = GPIO_MODE_AF_PP;
+        gpioInit.Pull = GPIO_PULLDOWN;
+        gpioInit.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+
+        gpioInit.Pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_10 | GPIO_PIN_11;
+        gpioInit.Alternate = GPIO_AF4_TIM8;
+        HAL_GPIO_Init(GPIOC, &gpioInit);
+
+        gpioInit.Pin = GPIO_PIN_7;
+        gpioInit.Pull = GPIO_PULLDOWN;
+        gpioInit.Alternate = GPIO_AF5_TIM8;
+        HAL_GPIO_Init(GPIOB, &gpioInit);
+    }
+}
+
+/**
+ * @brief DeInitialize the PWM timer mode
+ * @param htim is the pointer to the data structure of the timer handler.
+ */
+void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM8) {
+        __HAL_RCC_TIM8_FORCE_RESET();
+        __HAL_RCC_TIM8_RELEASE_RESET();
+        __HAL_RCC_TIM8_CLK_DISABLE();
+
+        HAL_GPIO_DeInit(GPIOC, GPIO_PIN_6);
+        HAL_GPIO_DeInit(GPIOC, GPIO_PIN_7);
+        HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10);
+        HAL_GPIO_DeInit(GPIOC, GPIO_PIN_11);
+        HAL_GPIO_DeInit(GPIOB, GPIO_PIN_7);
+    }
+}
+
+/**
  * @brief Initialize the ADC module, turn ON a clock source, setup GPIO and interrupt vector
  * @param hadc is the pointer to the data structure of the ADC module handler.
  */
