@@ -130,28 +130,49 @@ void SysTick_Handler(void) {
 /*  file (startup_stm32g4xxxx.s).                                             */
 /******************************************************************************/
 
+/**
+ * @brief ADC interrupt handler function
+ */
 void ADC1_2_IRQHandler(void) {
-    HAL_ADC_IRQHandler((ADC_HandleTypeDef *) Mcu.adc.handler);
+    HAL_ADC_IRQHandler((ADC_HandleTypeDef *) Mcu.adc.handle);
 }
 
+/**
+ * @brief Basic timer interrupt handler function
+ */
 void TIM6_DAC_IRQHandler(void) {
 }
 
+/**
+ * @brief Basic timer interrupt handler function
+ */
 void TIM7_IRQHandler(void) {
 }
 
+/**
+ * @brief General purpose timer interrupt handler function
+ */
 void TIM1_BRK_TIM15_IRQHandler(void) {
-    HAL_TIM_IRQHandler((TIM_HandleTypeDef *) Mcu.measTimer.handler);
+    HAL_TIM_IRQHandler((TIM_HandleTypeDef *) Mcu.measTimer.handle);
 }
 
+/**
+ * @brief Comparator interrupt handler function
+ */
 void COMP1_2_3_IRQHandler(void) {
-    HAL_COMP_IRQHandler((COMP_HandleTypeDef *) Mcu.comp.handler);
+    HAL_COMP_IRQHandler((COMP_HandleTypeDef *) Mcu.comp.handle);
 }
 
+/**
+ * @brief USART interrupt handler function
+ */
 void USART1_IRQHandler(void) {
-    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart1.obj);
+    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart1.handle);
 }
 
+/**
+ * @brief USART interrupt handler function
+ */
 void USART2_IRQHandler(void) {
-    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart2.obj);
+    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart2.handle);
 }
