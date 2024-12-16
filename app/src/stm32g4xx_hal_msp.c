@@ -31,7 +31,6 @@
 /**
   * @brief  Initialize the Global MSP.
   * @param  None
-  * @retval None
   */
 void HAL_MspInit(void) {
     __HAL_RCC_SYSCFG_CLK_ENABLE();
@@ -43,7 +42,6 @@ void HAL_MspInit(void) {
 /**
   * @brief  DeInitialize the Global MSP.
   * @param  None
-  * @retval None
   */
 void HAL_MspDeInit(void) {
 }
@@ -148,7 +146,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim) {
         gpioInit.Pull = GPIO_PULLDOWN;
         gpioInit.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 
-        gpioInit.Pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_10 | GPIO_PIN_11;
+        gpioInit.Pin = GPIO_PIN_6 | GPIO_PIN_10;
         gpioInit.Alternate = GPIO_AF4_TIM8;
         HAL_GPIO_Init(GPIOC, &gpioInit);
 
@@ -170,9 +168,7 @@ void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef *htim) {
         __HAL_RCC_TIM8_CLK_DISABLE();
 
         HAL_GPIO_DeInit(GPIOC, GPIO_PIN_6);
-        HAL_GPIO_DeInit(GPIOC, GPIO_PIN_7);
         HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10);
-        HAL_GPIO_DeInit(GPIOC, GPIO_PIN_11);
         HAL_GPIO_DeInit(GPIOB, GPIO_PIN_7);
     }
 }
