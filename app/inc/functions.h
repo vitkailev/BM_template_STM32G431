@@ -17,6 +17,10 @@ void checkPinState(PortDef *port);
 
 void setTimerPrescaler(TimerDef *tim, uint16_t value);
 
+void setPWMDutyCycle(TimerDef *tim, uint16_t channel, uint8_t value);
+
+void releasePWMBreakState(TimerDef *tim);
+
 bool isADCFinished(const ADCDef *adc);
 
 int readAnalogValues(ADCDef *adc);
@@ -31,9 +35,9 @@ uint32_t getRealVrefint(void);
 
 const void *getUniqueID(void);
 
-uint32_t getCRC(const void *data, uint32_t size);
+uint32_t getCRC(const void *data, uint16_t size);
 
-uint16_t generateRandomNumbers(void *rngObj, uint32_t *dst, uint16_t n);
+uint16_t generateRandomNumbers(uint32_t *dst, uint16_t n);
 
 #ifdef __cplusplus
 }
