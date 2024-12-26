@@ -13,15 +13,15 @@ enum UART_Constants {
     UART_BUFFER_SIZE = 256U,
     UART_QUEUE_SIZE = 1024U,
 
-    UART_TIMEDELAY_AFTER_LAST_SYMBOL = 2U // ms
+    UART_TIMEDELAY_AFTER_LAST_SYMBOL = 5U // msec.
 };
 
 enum UART_Errors {
     UART_SUCCESS,
     UART_NOT_INIT = -1,
-    UART_WRONG_DATA = -3,
-    UART_QUEUE_FULL = -4,
-    UART_NOT_ALL_DATA = -5
+    UART_WRONG_DATA = -2,
+    UART_QUEUE_FULL = -3,
+    UART_NOT_ALL_DATA = -4
 };
 
 typedef struct {
@@ -33,18 +33,18 @@ typedef struct {
     volatile uint32_t errors;
 
     // rx
-    volatile uint32_t time;
-    volatile uint16_t size;
-    uint8_t rxByte;
+    volatile uint32_t time; // msec.
+    volatile uint16_t size; // bytes
+    uint8_t rxByte; // bytes
     uint8_t buffer[UART_BUFFER_SIZE];
 
     // tx
-    uint16_t nSent;
+    uint16_t nSent; // bytes
     uint8_t *volatile head;
     uint8_t *tail;
     uint8_t queue[UART_QUEUE_SIZE];
 
-    void *obj;
+    void *handle;
 } UARTDef;
 
 int UART_init(UARTDef *uart);

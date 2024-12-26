@@ -1,25 +1,48 @@
-#include <stdlib.h>
-
 #include "stm32g4xx_hal.h"
 
 #include "uart.h"
 
+/**
+ * @brief Check, that the UART interface is initialized
+ * @param uart is the base UART data structure
+ * @return True - UART interface has been initialized, otherwise - False
+ */
 static bool isInit(const UARTDef *uart) {
     return uart->isInit;
 }
 
+/**
+ * @brief Check, that the UART interface is reading a new package
+ * @param uart is the base UART data structure
+ * @return True - is reading, otherwise - False
+ */
 static bool isReading(const UARTDef *uart) {
     return uart->isReading;
 }
 
+/**
+ * @brief Check, that the UART interface is sending data
+ * @param uart is the base UART data structure
+ * @return True - is writing, otherwise - False
+ */
 static bool isWriting(const UARTDef *uart) {
     return uart->isWriting;
 }
 
+/**
+ * @brief Check, that the output queue is empty
+ * @param uart is the base UART data structure
+ * @return True - is empty, otherwise - False
+ */
 static bool isQueueEmpty(const UARTDef *uart) {
     return (uart->tail == uart->head);
 }
 
+/**
+ * @brief Check, that the output queue is full
+ * @param uart is the base UART data structure
+ * @return True - is full, otherwise - False
+ */
 static bool isQueueFull(const UARTDef *uart) {
     if (uart->head == uart->queue && uart->tail == uart->queue + UART_QUEUE_SIZE)
         return true;
@@ -27,6 +50,10 @@ static bool isQueueFull(const UARTDef *uart) {
         return (uart->tail + 1 == uart->head);
 }
 
+/**
+ * @brief Send a new data chunk from the output queue to the UART module
+ * @param uart is the base UART data structure
+ */
 static void sendData(UARTDef *uart) {
     size_t size = 0;
     if (uart->tail > uart->head)
@@ -37,9 +64,14 @@ static void sendData(UARTDef *uart) {
     uart->nSent = (uint16_t) size;
 
     uart->isWriting = true;
-    HAL_UART_Transmit_IT((UART_HandleTypeDef *) uart->obj, uart->head, uart->nSent);
+    HAL_UART_Transmit_IT((UART_HandleTypeDef *) uart->handle, uart->head, uart->nSent);
 }
 
+/**
+ * @brief UART interface initialization
+ * @param uart is the base UART data structure
+ * @return UART_SUCCESS
+ */
 int UART_init(UARTDef *uart) {
     uart->head = uart->queue;
     uart->tail = uart->queue;
@@ -47,10 +79,22 @@ int UART_init(UARTDef *uart) {
     return UART_SUCCESS;
 }
 
+/**
+ * @brief Check, that UART interface has a new package
+ * @param uart is the base UART data structure
+ * @return True - UART interface has received a package, otherwise - False
+ */
 bool UART_isHaveData(const UARTDef *uart) {
     return uart->isHaveData;
 }
 
+/**
+ * @brief Put the target data to the UART interface output queue (for sending)
+ * @param uart is the base UART data structure
+ * @param data is the target data
+ * @param size is the target data size (bytes)
+ * @return UART_Errors value
+ */
 int UART_writeData(UARTDef *uart, const void *data, uint16_t size) {
     if (!isInit(uart))
         return UART_NOT_INIT;
@@ -75,11 +119,16 @@ int UART_writeData(UARTDef *uart, const void *data, uint16_t size) {
     return UART_SUCCESS;
 }
 
+/**
+ * @brief Update the UART interface current state
+ * @param uart is the base UART data structure
+ * @param currentTime is the runtime value (msec.)
+ */
 void UART_update(UARTDef *uart, uint32_t currentTime) {
     if (!isInit(uart))
         return;
 
-    if (isReading(uart) && abs(currentTime - uart->time) >= UART_TIMEDELAY_AFTER_LAST_SYMBOL) {
+    if (isReading(uart) && (currentTime - uart->time) >= UART_TIMEDELAY_AFTER_LAST_SYMBOL) {
         uart->isReading = false;
         uart->isHaveData = true;
     }
