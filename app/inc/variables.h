@@ -56,14 +56,15 @@ typedef struct {
     uint16_t duration;
 
     uint16_t pin;
-    void *obj;
+    void *handle;
 } PortDef;
 
 typedef struct {
     volatile bool isTriggered;
     uint16_t prescaler;
     uint32_t freq;
-    void *handler;
+
+    void *handle;
 } TimerDef;
 
 typedef struct {
@@ -76,7 +77,7 @@ typedef struct {
     uint16_t rawValues[NUMBER_ADC_CHANNELS]; // relative values
     uint16_t value[NUMBER_ADC_CHANNELS]; // mV
 
-    void *handler;
+    void *handle;
 } ADCDef;
 
 typedef struct {
@@ -84,8 +85,18 @@ typedef struct {
     uint32_t value;
     DAC_ChannelConfTypeDef channel;
 
-    void *handler;
+    void *handle;
 } DACDef;
+
+typedef struct {
+    volatile bool isTriggered;
+    volatile bool state;
+    volatile uint32_t errType;
+    volatile uint32_t errors;
+
+    DACDef dac;
+    void *handle;
+} CompDef;
 
 typedef struct {
     bool isProcessing;
@@ -97,19 +108,10 @@ typedef struct {
 } GeneratorDef;
 
 typedef struct {
-    volatile bool isTriggered;
-    volatile bool state;
-    volatile uint32_t errType;
-
-    DACDef dac;
-    void *handler;
-} CompDef;
-
-typedef struct {
     void *crc;
     void *rng;
     void *wdt;
-} HandlersDef;
+} HandlesDef;
 
 typedef struct {
     FlagsDef flags;
@@ -121,14 +123,29 @@ typedef struct {
     PortDef button[NUMBER_BUTTONS];
     PortDef oscPins[NUMBER_OSC_CHANNELS];
 
-    HandlersDef handlers;
+    HandlesDef handles;
     TimerDef measTimer;
+    TimerDef pwmTimer;
     ADCDef adc;
-    GeneratorDef generator;
     CompDef comp;
+    GeneratorDef generator;
     UARTDef uart1;
     UARTDef uart2;
 } MCUDef;
+
+typedef struct {
+    uint16_t startWord;
+    union CommandsDef {
+        struct CommandsList {
+            unsigned readUniqueID: 1;
+            unsigned readCurrentState: 1;
+            unsigned : 30;
+        } fields;
+        uint32_t full;
+    } commands;
+    uint8_t data[32];
+    uint32_t crc;
+} __attribute__ ((packed)) ControlCommandDef;
 
 extern MCUDef Mcu;
 
