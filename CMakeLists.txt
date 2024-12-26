@@ -30,9 +30,9 @@ target_compile_options(${PROJECT_NAME} PRIVATE
         $<$<COMPILE_LANGUAGE:C:-std=gnu${CMAKE_C_STANDARD}>:-std=gnu++${CMAKE_CXX_STANDARD}>
         -g -O2
         -mthumb
+        -mfpu=fpv4-sp-d16 -mfloat-abi=hard
         -Wall -Wextra -Wconversion -Wshadow -Wunused -Wuninitialized -Wmissing-declarations -Wpointer-arith -Wlogical-op -Waggregate-return -Wfloat-equal
-        -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections
-        -mfpu=fpv4-sp-d16 -mfloat-abi=hard)
+        -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections)
 target_link_options(${PROJECT_NAME} PRIVATE
         -T ${LINKER_FILE}
         -mcpu=${CMAKE_SYSTEM_PROCESSOR}
