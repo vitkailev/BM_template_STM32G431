@@ -2,20 +2,24 @@
 
 #include "settings.h"
 
-static TIM_HandleTypeDef timer6Handler;
-static TIM_HandleTypeDef timer7Handler;
-static TIM_HandleTypeDef timer8Handler;
-static TIM_HandleTypeDef timer15Handler;
-static ADC_HandleTypeDef adcHandler;
-static DAC_HandleTypeDef dac1Handler;
-static DAC_HandleTypeDef dac3Handler;
-static COMP_HandleTypeDef compHandler;
-static UART_HandleTypeDef usart1Handler;
-static UART_HandleTypeDef usart2Handler;
-static CRC_HandleTypeDef crcHandler;
-static RNG_HandleTypeDef rngHandler;
-static IWDG_HandleTypeDef wdtHandler;
+static TIM_HandleTypeDef timer6Handle;
+static TIM_HandleTypeDef timer7Handle;
+static TIM_HandleTypeDef timer8Handle;
+static TIM_HandleTypeDef timer15Handle;
+static ADC_HandleTypeDef adcHandle;
+static DAC_HandleTypeDef dac1Handle;
+static DAC_HandleTypeDef dac3Handle;
+static COMP_HandleTypeDef compHandle;
+static UART_HandleTypeDef usart1Handle;
+static UART_HandleTypeDef usart2Handle;
+static CRC_HandleTypeDef crcHandle;
+static RNG_HandleTypeDef rngHandle;
+static IWDG_HandleTypeDef wdtHandle;
 
+/**
+ * @brief Setting system clocks
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingSystemClock(void) {
     HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
 
@@ -30,18 +34,17 @@ static int settingSystemClock(void) {
 
     // Datasheet, DS12589 Rev. 6, Electrical characteristics, PLL characteristics, page 106
     // Voltage scaling Range 1: 150MHz
-    // PLL VCO: 288MHz
     oscInit.PLL.PLLState = RCC_PLL_ON;
     oscInit.PLL.PLLSource = RCC_PLLSOURCE_HSI; // 16MHz
     oscInit.PLL.PLLM = RCC_PLLM_DIV1;
-    oscInit.PLL.PLLN = 18;
+    oscInit.PLL.PLLN = 18; // PLL VCO: 288MHz
 
     // Datasheet, DS12589 Rev. 6, Electrical characteristics, Analog-to-digital converter characteristics, page 118
     // Range 1, Vdda >= 2.7V, max 52MHz
     oscInit.PLL.PLLP = RCC_PLLP_DIV6; // 48MHz
 
     oscInit.PLL.PLLQ = RCC_PLLQ_DIV6;
-    oscInit.PLL.PLLR = RCC_PLLR_DIV2;
+    oscInit.PLL.PLLR = RCC_PLLR_DIV2; // PLLCLK: 144NHz
 
     if (HAL_RCC_OscConfig(&oscInit) != HAL_OK)
         return SETTING_ERROR;
@@ -60,6 +63,10 @@ static int settingSystemClock(void) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting GPIO pins (input and output)
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingGPIO(void) {
     GPIO_InitTypeDef gpioInit = {0};
 
@@ -71,6 +78,7 @@ static int settingGPIO(void) {
     gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOC, &gpioInit);
 
+    // DAC also uses this pin
     // LED
 //    __HAL_RCC_GPIOA_CLK_ENABLE();
 //    gpioInit.Pin = GPIO_PIN_5;
@@ -98,16 +106,21 @@ static int settingGPIO(void) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting general purpose timer
+ * @param timer is the base timer data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingTimer(TimerDef *timer) {
     uint32_t sourceClock = HAL_RCC_GetPCLK2Freq();
     // APB2Divider != 1
     sourceClock *= 2;
 
-    timer->handler = (void *) &timer15Handler;
+    timer->handle = (void *) &timer15Handle;
     timer->freq = 4000U; // Hz
-    timer->prescaler = sourceClock / timer->freq / 100U - 1U;
+    timer->prescaler = (uint16_t) (sourceClock / timer->freq / 100U - 1U);
 
-    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->handler;
+    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->handle;
     tim->Instance = TIM15;
     tim->Init.Period = 100U - 1U;
     tim->Init.Prescaler = timer->prescaler;
@@ -129,16 +142,21 @@ static int settingTimer(TimerDef *timer) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting PWM output signal
+ * @param timer is the base timer data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingPWM(TimerDef *timer) {
     uint32_t sourceClock = HAL_RCC_GetPCLK2Freq();
     // APB2Divider != 1
     sourceClock *= 2;
 
-    timer->handler = (void *) &timer8Handler;
+    timer->handle = (void *) &timer8Handle;
     timer->freq = 10000U; // Hz
-    timer->prescaler = sourceClock / timer->freq / 100U - 1U;
+    timer->prescaler = (uint16_t) (sourceClock / timer->freq / 100U - 1U);
 
-    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->handler;
+    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->handle;
     tim->Instance = TIM8;
     tim->Init.Period = 100U - 1U;
     tim->Init.Prescaler = timer->prescaler;
@@ -167,9 +185,6 @@ static int settingPWM(TimerDef *timer) {
 
     pwm.Pulse = 5;
     if (HAL_TIM_PWM_ConfigChannel(tim, &pwm, TIM_CHANNEL_1) != HAL_OK)
-        return SETTING_ERROR;
-    pwm.Pulse = 5;
-    if (HAL_TIM_PWM_ConfigChannel(tim, &pwm, TIM_CHANNEL_2) != HAL_OK)
         return SETTING_ERROR;
 
     if (HAL_TIMEx_ConfigDeadTime(tim, 64) != HAL_OK)
@@ -202,9 +217,14 @@ static int settingPWM(TimerDef *timer) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting analog-digital-converter (ADC)
+ * @param adc is the base ADC data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingADC(ADCDef *adc) {
-    adc->handler = (void *) &adcHandler;
-    ADC_HandleTypeDef *adcInit = (ADC_HandleTypeDef *) adc->handler;
+    adc->handle = (void *) &adcHandle;
+    ADC_HandleTypeDef *adcInit = (ADC_HandleTypeDef *) adc->handle;
     adcInit->Instance = ADC1;
     adcInit->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
     adcInit->Init.Resolution = ADC_RESOLUTION_12B;
@@ -268,9 +288,14 @@ static int settingADC(ADCDef *adc) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting analog signal generator
+ * @param gen is the base generator data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingGenerator(GeneratorDef *gen) {
-    gen->dac.handler = (void *) &dac1Handler;
-    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) gen->dac.handler;
+    gen->dac.handle = (void *) &dac1Handle;
+    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) gen->dac.handle;
     dacInit->Instance = DAC1;
     if (HAL_DAC_Init(dacInit) != HAL_OK)
         return SETTING_ERROR;
@@ -284,8 +309,8 @@ static int settingGenerator(GeneratorDef *gen) {
     gen->dac.channel.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
     gen->dac.channel.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_EXTERNAL;
     gen->dac.channel.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
-//    chInit.DAC_TrimmingValue =;
-//    chInit.DAC_SampleAndHoldConfig =;
+//    gen->dac.channel.DAC_TrimmingValue =;
+//    gen->dac.channel.DAC_SampleAndHoldConfig =;
 
     // channel 1 - DC - manual changed voltage
     if (HAL_DAC_ConfigChannel(dacInit, &gen->dac.channel, DAC_CHANNEL_1) != HAL_OK)
@@ -305,11 +330,11 @@ static int settingGenerator(GeneratorDef *gen) {
     TIM_HandleTypeDef *tim = NULL;
     TIM_MasterConfigTypeDef masterConf = {0};
 
-    gen->timer_1.handler = (void *) &timer6Handler;
-    gen->timer_1.freq = 0; // Hz, dynamic
+    gen->timer_1.handle = (void *) &timer6Handle;
+    gen->timer_1.freq = 18000000; // Hz
     gen->timer_1.prescaler = 0;
 
-    tim = (TIM_HandleTypeDef *) gen->timer_1.handler;
+    tim = (TIM_HandleTypeDef *) gen->timer_1.handle;
     tim->Instance = TIM6;
     tim->Init.Period = 4U - 1U;
     tim->Init.Prescaler = gen->timer_1.prescaler;
@@ -327,11 +352,11 @@ static int settingGenerator(GeneratorDef *gen) {
     if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
         return SETTING_ERROR;
 
-    gen->timer_2.handler = (void *) &timer7Handler;
-    gen->timer_2.freq = 9000; // Hz, dynamic
-    gen->timer_2.prescaler = sourceClock / gen->timer_2.freq / 100U - 1U;
+    gen->timer_2.handle = (void *) &timer7Handle;
+    gen->timer_2.freq = 9000; // Hz
+    gen->timer_2.prescaler = (uint16_t) (sourceClock / gen->timer_2.freq / 100U - 1U);
 
-    tim = (TIM_HandleTypeDef *) gen->timer_2.handler;
+    tim = (TIM_HandleTypeDef *) gen->timer_2.handle;
     tim->Instance = TIM7;
     tim->Init.Period = 100U - 1U;
     tim->Init.Prescaler = gen->timer_2.prescaler;
@@ -352,9 +377,14 @@ static int settingGenerator(GeneratorDef *gen) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting comparator
+ * @param comp is the base comparator data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingComp(CompDef *comp) {
-    comp->dac.handler = (void *) &dac3Handler;
-    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) comp->dac.handler;
+    comp->dac.handle = (void *) &dac3Handle;
+    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) comp->dac.handle;
     dacInit->Instance = DAC3;
     if (HAL_DAC_Init(dacInit) != HAL_OK)
         return SETTING_ERROR;
@@ -368,8 +398,8 @@ static int settingComp(CompDef *comp) {
     comp->dac.channel.DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE;
     comp->dac.channel.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_INTERNAL;
     comp->dac.channel.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
-//    chInit.DAC_TrimmingValue =;
-//    chInit.DAC_SampleAndHoldConfig =;
+//    comp->dac.channel.DAC_TrimmingValue =;
+//    comp->dac.channel.DAC_SampleAndHoldConfig =;
 
     if (HAL_DAC_ConfigChannel(dacInit, &comp->dac.channel, DAC_CHANNEL_2) != HAL_OK)
         return SETTING_ERROR;
@@ -377,8 +407,8 @@ static int settingComp(CompDef *comp) {
     if (HAL_DACEx_SelfCalibrate(dacInit, &comp->dac.channel, DAC_CHANNEL_2) != HAL_OK)
         return SETTING_ERROR;
 
-    comp->handler = (void *) &compHandler;
-    COMP_HandleTypeDef *compInit = (COMP_HandleTypeDef *) comp->handler;
+    comp->handle = (void *) &compHandle;
+    COMP_HandleTypeDef *compInit = (COMP_HandleTypeDef *) comp->handle;
     compInit->Instance = COMP2;
     compInit->Init.InputPlus = COMP_INPUT_PLUS_IO1; // PA7
     compInit->Init.InputMinus = COMP_INPUT_MINUS_DAC3_CH2;
@@ -393,11 +423,16 @@ static int settingComp(CompDef *comp) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting USART modules
+ * @param mcu is the base MCU data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingUART(MCUDef *mcu) {
     UART_HandleTypeDef *uartInit = NULL;
 
-    mcu->uart1.obj = &usart1Handler;
-    uartInit = (UART_HandleTypeDef *) mcu->uart1.obj;
+    mcu->uart1.handle = &usart1Handle;
+    uartInit = (UART_HandleTypeDef *) mcu->uart1.handle;
     uartInit->Instance = USART1;
     uartInit->FifoMode = UART_FIFOMODE_DISABLE;
     uartInit->Init.BaudRate = 115200;
@@ -414,8 +449,8 @@ static int settingUART(MCUDef *mcu) {
     if (HAL_UART_Init(uartInit) != HAL_OK)
         return SETTING_ERROR;
 
-    mcu->uart2.obj = &usart2Handler;
-    uartInit = (UART_HandleTypeDef *) mcu->uart2.obj;
+    mcu->uart2.handle = &usart2Handle;
+    uartInit = (UART_HandleTypeDef *) mcu->uart2.handle;
     uartInit->Instance = USART2;
     uartInit->FifoMode = UART_FIFOMODE_DISABLE;
     uartInit->Init.BaudRate = 115200;
@@ -435,9 +470,14 @@ static int settingUART(MCUDef *mcu) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting Cyclic-Redundancy-Check (CRC) module
+ * @param mcu is the base MCU data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingCRC(MCUDef *mcu) {
-    mcu->handlers.crc = &crcHandler;
-    CRC_HandleTypeDef *crcInit = (CRC_HandleTypeDef *) mcu->handlers.crc;
+    mcu->handles.crc = &crcHandle;
+    CRC_HandleTypeDef *crcInit = (CRC_HandleTypeDef *) mcu->handles.crc;
     crcInit->Instance = CRC;
     crcInit->InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES; // uint8_t
     crcInit->Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
@@ -446,15 +486,20 @@ static int settingCRC(MCUDef *mcu) {
     crcInit->Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_BYTE;
     crcInit->Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_ENABLE;
 
-    if (HAL_CRC_Init(&crcHandler) != HAL_OK)
+    if (HAL_CRC_Init(&crcHandle) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting random number generator (RNG) module
+ * @param mcu is the base MCU data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingRNG(MCUDef *mcu) {
-    mcu->handlers.rng = (void *) &rngHandler;
-    RNG_HandleTypeDef *rngInit = (RNG_HandleTypeDef *) mcu->handlers.rng;
+    mcu->handles.rng = (void *) &rngHandle;
+    RNG_HandleTypeDef *rngInit = (RNG_HandleTypeDef *) mcu->handles.rng;
     rngInit->Instance = RNG;
     rngInit->Init.ClockErrorDetection = RNG_CED_ENABLE;
 
@@ -464,9 +509,14 @@ static int settingRNG(MCUDef *mcu) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Setting watchdog timer (WDT) module
+ * @param mcu is the base MCU data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int settingWDT(MCUDef *mcu) {
-    mcu->handlers.wdt = (void *) &wdtHandler;
-    IWDG_HandleTypeDef *wdtInit = (IWDG_HandleTypeDef *) mcu->handlers.wdt;
+    mcu->handles.wdt = (void *) &wdtHandle;
+    IWDG_HandleTypeDef *wdtInit = (IWDG_HandleTypeDef *) mcu->handles.wdt;
     wdtInit->Instance = IWDG;
     wdtInit->Init.Prescaler = IWDG_PRESCALER_8;
     wdtInit->Init.Reload = 0x0FFF;
@@ -478,16 +528,25 @@ static int settingWDT(MCUDef *mcu) {
     return SETTING_SUCCESS;
 }
 
+/**
+ * @brief Turn ON the modules interrupts
+ * @param mcu is the base MCU data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 static int turnOnInterrupts(MCUDef *mcu) {
-    if (HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) mcu->measTimer.handler) == HAL_OK &&
-        HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart1.obj, &mcu->uart1.rxByte, 1U) == HAL_OK &&
-        HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart2.obj, &mcu->uart2.rxByte, 1U) == HAL_OK) {
+    if (HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart1.handle, &mcu->uart1.rxByte, 1U) == HAL_OK &&
+        HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart2.handle, &mcu->uart2.rxByte, 1U) == HAL_OK) {
         return SETTING_SUCCESS;
     }
 
     return SETTING_ERROR;
 }
 
+/**
+ * @brief Run the MCU modules setting process
+ * @param mcu is the base MCU data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
 int initialization(MCUDef *mcu) {
     if (SETTING_SUCCESS != settingSystemClock()) {
 

@@ -1,5 +1,5 @@
-#ifndef STM32G431_SETTINGS_H
-#define STM32G431_SETTINGS_H
+#ifndef SETTINGS_H
+#define SETTINGS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,4 +18,4 @@ int initialization(MCUDef *mcu);
 }
 #endif
 
-#endif // STM32G431_SETTINGS_H
+#endif // SETTINGS_H

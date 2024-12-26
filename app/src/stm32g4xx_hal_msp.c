@@ -48,7 +48,7 @@ void HAL_MspDeInit(void) {
 
 /**
  * @brief Initialize the hardware accelerator of certain mathematical functions (CORDIC), turn ON a clock source
- * @param hcordic is the pointer to the data structure of the CORDIC handler.
+ * @param hcordic is the pointer to the data structure of the CORDIC handle (HAL).
  */
 void HAL_CORDIC_MspInit(CORDIC_HandleTypeDef *hcordic) {
     if (hcordic->Instance == CORDIC) {
@@ -58,7 +58,7 @@ void HAL_CORDIC_MspInit(CORDIC_HandleTypeDef *hcordic) {
 
 /**
  * @brief DeInitialize the CORDIC
- * @param hcordic is the pointer to the data structure of the base timer handler.
+ * @param hcordic is the pointer to the data structure of the CORDIC handle (HAL).
  */
 void HAL_CORDIC_MspDeInit(CORDIC_HandleTypeDef *hcordic) {
     if (hcordic->Instance == CORDIC) {
@@ -70,7 +70,7 @@ void HAL_CORDIC_MspDeInit(CORDIC_HandleTypeDef *hcordic) {
 
 /**
  * @brief Initialize the filter mathematical accelerator (FMAC), turn ON a clock source
- * @param hfmac is the pointer to the data structure of the FMAC handler.
+ * @param hfmac is the pointer to the data structure of the FMAC handle (HAL).
  */
 void HAL_FMAC_MspInit(FMAC_HandleTypeDef *hfmac) {
     if (hfmac->Instance == FMAC) {
@@ -80,7 +80,7 @@ void HAL_FMAC_MspInit(FMAC_HandleTypeDef *hfmac) {
 
 /**
  * @brief DeInitialize the FMAC
- * @param hfmac is the pointer to the data structure of the FMAC handler.
+ * @param hfmac is the pointer to the data structure of the FMAC handle (HAL).
  */
 void HAL_FMAC_MspDeInit(FMAC_HandleTypeDef *hfmac) {
     if (hfmac->Instance == FMAC) {
@@ -92,7 +92,7 @@ void HAL_FMAC_MspDeInit(FMAC_HandleTypeDef *hfmac) {
 
 /**
  * @brief Initialize the base timers, turn ON a clock source and setup interrupt vector
- * @param htim is the pointer to the data structure of the base timer handler.
+ * @param htim is the pointer to the data structure of the base timer handle (HAL).
  */
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM6) {
@@ -109,7 +109,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim) {
 
 /**
  * @brief DeInitialize the base timers
- * @param htim is the pointer to the data structure of the base timer handler.
+ * @param htim is the pointer to the data structure of the base timer handle (HAL).
  */
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM6) {
@@ -131,7 +131,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim) {
 
 /**
  * @brief Initialize the PWM timer mode, turn ON a clock source and setup GPIOs
- * @param htim is the pointer to the data structure of the timer handler.
+ * @param htim is the pointer to the data structure of the timer handle (HAL).
  */
 void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim) {
     GPIO_InitTypeDef gpioInit = {0};
@@ -159,7 +159,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim) {
 
 /**
  * @brief DeInitialize the PWM timer mode
- * @param htim is the pointer to the data structure of the timer handler.
+ * @param htim is the pointer to the data structure of the timer handle (HAL).
  */
 void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM8) {
@@ -175,7 +175,7 @@ void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef *htim) {
 
 /**
  * @brief Initialize the ADC module, turn ON a clock source, setup GPIO and interrupt vector
- * @param hadc is the pointer to the data structure of the ADC module handler.
+ * @param hadc is the pointer to the data structure of the ADC handle (HAL).
  */
 void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc) {
     GPIO_InitTypeDef gpioInit = {0};
@@ -209,7 +209,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc) {
 
 /**
  * @brief DeInitialize the ADC module
- * @param hadc is the pointer to the data structure of the ADC module handler.
+ * @param hadc is the pointer to the data structure of the ADC handle (HAL).
  */
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc) {
     if (hadc->Instance == ADC1) {
@@ -227,7 +227,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc) {
 
 /**
  * @brief Initialize the DAC module, turn ON a clock source, setup GPIO and interrupt vector
- * @param hdac is the pointer to the data structure of the DAC module handler.
+ * @param hdac is the pointer to the data structure of the DAC handle (HAL).
  */
 void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac) {
     GPIO_InitTypeDef gpioInit = {0};
@@ -247,7 +247,7 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac) {
 
 /**
  * @brief DeInitialize the DAC module
- * @param hdac is the pointer to the data structure of the DAC module handler.
+ * @param hdac is the pointer to the data structure of the DAC handle (HAL).
  */
 void HAL_DAC_MspDeInit(DAC_HandleTypeDef *hdac) {
     if (hdac->Instance == DAC1) {
@@ -266,7 +266,7 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef *hdac) {
 
 /**
  * @brief Initialize the COMP module, turn ON a clock source, setup GPIO and interrupt vector
- * @param hcomp is the pointer to the data structure of the COMP module handler.
+ * @param hcomp is the pointer to the data structure of the COMP handle (HAL).
  */
 void HAL_COMP_MspInit(COMP_HandleTypeDef *hcomp) {
     GPIO_InitTypeDef gpioInit = {0};
@@ -285,7 +285,7 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef *hcomp) {
 
 /**
  * @brief DeInitialize the COMP module
- * @param hcomp is the pointer to the data structure of the COMP module handler.
+ * @param hcomp is the pointer to the data structure of the COMP handle (HAL).
  */
 void HAL_COMP_MspDeInit(COMP_HandleTypeDef *hcomp) {
     if (hcomp->Instance == COMP2) {
@@ -297,7 +297,7 @@ void HAL_COMP_MspDeInit(COMP_HandleTypeDef *hcomp) {
 
 /**
  * @brief Initialize the UART interfaces, turn ON a clock source, setup GPIO and interrupt vector
- * @param huart is the pointer to the data structure of the UART interface handler.
+ * @param huart is the pointer to the data structure of the UART handle (HAL).
  */
 void HAL_UART_MspInit(UART_HandleTypeDef *huart) {
     GPIO_InitTypeDef gpioInit = {0};
@@ -344,7 +344,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart) {
 
 /**
  * @brief DeInitialize the UART interfaces
- * @param huart is the pointer to the data structure of the UART interface handler.
+ * @param huart is the pointer to the data structure of the UART handle (HAL).
  */
 void HAL_UART_MspDeInit(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART1) {
@@ -370,7 +370,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart) {
 
 /**
  * @brief Initialize the CRC module, turn ON a clock source
- * @param hcrc is the pointer to the data structure of the CRC module.
+ * @param hcrc is the pointer to the data structure of the CRC handle (HAL).
  */
 void HAL_CRC_MspInit(CRC_HandleTypeDef *hcrc) {
     if (hcrc->Instance == CRC) {
@@ -380,7 +380,7 @@ void HAL_CRC_MspInit(CRC_HandleTypeDef *hcrc) {
 
 /**
  * @brief DeInitialize the CRC module
- * @param hcrc is the pointer to the data structure of the CRC module.
+ * @param hcrc is the pointer to the data structure of the CRC handle (HAL).
  */
 void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc) {
     if (hcrc->Instance == CRC) {
@@ -392,7 +392,7 @@ void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc) {
 
 /**
  * @brief Initialize the RNG module, turn ON a clock source
- * @param hrng is the pointer to the data structure of the RNG module.
+ * @param hrng is the pointer to the data structure of the RNG handle (HAL).
  */
 void HAL_RNG_MspInit(RNG_HandleTypeDef *hrng) {
     if (hrng->Instance == RNG) {
@@ -407,7 +407,7 @@ void HAL_RNG_MspInit(RNG_HandleTypeDef *hrng) {
 
 /**
  * @brief DeInitialize the RNG module
- * @param hrng is the pointer to the data structure of the RNG module.
+ * @param hrng is the pointer to the data structure of the RNG handle (HAL).
  */
 void HAL_RNG_MspDeInit(RNG_HandleTypeDef *hrng) {
     if (hrng->Instance == RNG) {

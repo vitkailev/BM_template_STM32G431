@@ -1,10 +1,10 @@
 #include "stm32g4xx_hal.h"
 
-#include "variables.h"
+#include "functions.h"
 
 /**
  * @brief A timer interrupt callback function
- * @param htim is the timer base handle structure (HAL)
+ * @param htim is the timer handle structure (HAL)
  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == ((TIM_HandleTypeDef *) Mcu.measTimer.handle)->Instance) {
@@ -14,7 +14,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 /**
  * @brief ADC interrupt callback function
- * @param hadc is the ADC base handle structure (HAL)
+ * @param hadc is the ADC handle structure (HAL)
  */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
     if (hadc->Instance == ((ADC_HandleTypeDef *) Mcu.adc.handle)->Instance) {
@@ -35,7 +35,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 /**
  * @brief ADC interrupt error callback function
- * @param hadc is the ADC base handle structure (HAL)
+ * @param hadc is the ADC handle structure (HAL)
  */
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc) {
     if (hadc->Instance == ((ADC_HandleTypeDef *) Mcu.adc.handle)->Instance) {
@@ -47,7 +47,7 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc) {
 
 /**
  * @brief A comparator interrupt callback function
- * @param hcomp is the comparator base handle structure (HAL)
+ * @param hcomp is the comparator handle structure (HAL)
  */
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp) {
     if (hcomp->Instance == ((COMP_HandleTypeDef *) Mcu.comp.handle)->Instance) {
@@ -72,7 +72,7 @@ static void UART_txHandler(UARTDef *uart) {
 
 /**
  * @brief UART data transfer callback function
- * @param huart is the UART base handle structure (HAL)
+ * @param huart is the UART handle structure (HAL)
  */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.handle)->Instance) {
@@ -103,7 +103,7 @@ static void UART_rxHandler(UARTDef *uart, uint32_t time) {
 
 /**
  * @brief UART data receive callback function
- * @param huart is the UART base handle structure (HAL)
+ * @param huart is the UART handle structure (HAL)
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.handle)->Instance) {
@@ -115,7 +115,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 /**
  * @brief UART errors callback function
- * @param huart is the UART base handle structure (HAL)
+ * @param huart is the UART handle structure (HAL)
  */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.handle)->Instance) {
