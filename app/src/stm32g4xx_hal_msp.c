@@ -323,7 +323,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart) {
         }
     } else if (huart->Instance == USART2) {
         clockInit.PeriphClockSelection = RCC_PERIPHCLK_USART2;
-        clockInit.Usart1ClockSelection = RCC_USART2CLKSOURCE_HSI;
+        clockInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_HSI;
 
         if (HAL_RCCEx_PeriphCLKConfig(&clockInit) == HAL_OK) {
             __HAL_RCC_USART2_CLK_ENABLE();
