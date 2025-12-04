@@ -19,10 +19,14 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 set(LINKER_FILE ${CMAKE_SOURCE_DIR}/startup/STM32G431RBTX_FLASH.ld)
-set(STARTUP_FILE ${CMAKE_SOURCE_DIR}/startup/startup_stm32g431rbtx.s)
+set(STARTUP_FILE ${CMAKE_SOURCE_DIR}/startup/startup_stm32g431xx.s)
 file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "app/src/*.c" "system/src/*.c" "lib/hal/src/*.c")
 
 add_executable(${PROJECT_NAME} ${STARTUP_FILE} ${SOURCE_FILES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+        -DSTM32G431xx
+        -DUSE_HAL_DRIVER
+        -DUSE_FULL_ASSERT)
 target_include_directories(${PROJECT_NAME} PRIVATE
         core app/inc system/inc lib/hal/inc)
 target_compile_options(${PROJECT_NAME} PRIVATE
