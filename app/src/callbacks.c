@@ -75,10 +75,8 @@ static void UART_txHandler(UARTDef *uart) {
  * @param huart is the UART handle structure (HAL)
  */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.handle)->Instance) {
-        UART_txHandler(&Mcu.uart1);
-    } else if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart2.handle)->Instance) {
-        UART_txHandler(&Mcu.uart2);
+    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart.handle)->Instance) {
+        UART_txHandler(&Mcu.uart);
     }
 }
 
@@ -106,10 +104,8 @@ static void UART_rxHandler(UARTDef *uart, uint32_t time) {
  * @param huart is the UART handle structure (HAL)
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.handle)->Instance) {
-        UART_rxHandler(&Mcu.uart1, HAL_GetTick());
-    } else if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart2.handle)->Instance) {
-        UART_rxHandler(&Mcu.uart2, HAL_GetTick());
+    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart.handle)->Instance) {
+        UART_rxHandler(&Mcu.uart, HAL_GetTick());
     }
 }
 
@@ -118,15 +114,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
  * @param huart is the UART handle structure (HAL)
  */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart1.handle)->Instance) {
-        Mcu.uart1.isWriting = false;
-        Mcu.uart1.isReading = false;
-        Mcu.uart1.errType = HAL_UART_GetError((UART_HandleTypeDef *) Mcu.uart1.handle);
-        Mcu.uart1.errors++;
-    } else if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart2.handle)->Instance) {
-        Mcu.uart2.isWriting = false;
-        Mcu.uart2.isReading = false;
-        Mcu.uart2.errType = HAL_UART_GetError((UART_HandleTypeDef *) Mcu.uart2.handle);
-        Mcu.uart2.errors++;
+    if (huart->Instance == ((UART_HandleTypeDef *) Mcu.uart.handle)->Instance) {
+        Mcu.uart.isWriting = false;
+        Mcu.uart.isReading = false;
+        Mcu.uart.errType = HAL_UART_GetError((UART_HandleTypeDef *) Mcu.uart.handle);
+        Mcu.uart.errors++;
     }
 }

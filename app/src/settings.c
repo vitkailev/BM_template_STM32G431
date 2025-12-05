@@ -2,18 +2,14 @@
 
 #include "settings.h"
 
-static TIM_HandleTypeDef timer6Handle;
-static TIM_HandleTypeDef timer7Handle;
-static TIM_HandleTypeDef timer8Handle;
 static TIM_HandleTypeDef timer15Handle;
+static TIM_HandleTypeDef timer16Handle;
 static ADC_HandleTypeDef adcHandle;
 static DAC_HandleTypeDef dac1Handle;
 static DAC_HandleTypeDef dac3Handle;
 static COMP_HandleTypeDef compHandle;
 static UART_HandleTypeDef usart1Handle;
-static UART_HandleTypeDef usart2Handle;
 static CRC_HandleTypeDef crcHandle;
-static RNG_HandleTypeDef rngHandle;
 static IWDG_HandleTypeDef wdtHandle;
 
 /**
@@ -78,30 +74,13 @@ static int settingGPIO(void) {
     gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOC, &gpioInit);
 
-    // DAC also uses this pin
     // LED
-//    __HAL_RCC_GPIOA_CLK_ENABLE();
-//    gpioInit.Pin = GPIO_PIN_5;
-//    gpioInit.Mode = GPIO_MODE_OUTPUT_PP;
-//    gpioInit.Pull = GPIO_PULLDOWN;
-//    gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
-//    HAL_GPIO_Init(GPIOA, &gpioInit);
-
-    // GPIO: D2, D7, D8
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    gpioInit.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10;
-    gpioInit.Mode = GPIO_MODE_OUTPUT_PP;
-    gpioInit.Pull = GPIO_PULLDOWN;
-    gpioInit.Speed = GPIO_SPEED_FREQ_MEDIUM;
-    HAL_GPIO_Init(GPIOA, &gpioInit);
-
-    // GPIO: D4
-    __HAL_RCC_GPIOB_CLK_ENABLE();
     gpioInit.Pin = GPIO_PIN_5;
     gpioInit.Mode = GPIO_MODE_OUTPUT_PP;
     gpioInit.Pull = GPIO_PULLDOWN;
-    gpioInit.Speed = GPIO_SPEED_FREQ_MEDIUM;
-    HAL_GPIO_Init(GPIOB, &gpioInit);
+    gpioInit.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOA, &gpioInit);
 
     return SETTING_SUCCESS;
 }
@@ -112,106 +91,33 @@ static int settingGPIO(void) {
  * @return SETTING_SUCCESS or SETTING_ERROR
  */
 static int settingTimer(TimerDef *timer) {
+    TIM_HandleTypeDef *timInit = NULL;
+    TIM_MasterConfigTypeDef masterConf = {0};
+
     uint32_t sourceClock = HAL_RCC_GetPCLK2Freq();
     // APB2Divider != 1
     sourceClock *= 2;
 
     timer->handle = (void *) &timer15Handle;
-    timer->freq = 4000U; // Hz
-    timer->prescaler = (uint16_t) (sourceClock / timer->freq / 100U - 1U);
+    timer->freq = 4000U;
+    timer->prescaler = 180 - 1;
 
-    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->handle;
-    tim->Instance = TIM15;
-    tim->Init.Period = 100U - 1U;
-    tim->Init.Prescaler = timer->prescaler;
-    tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    tim->Init.CounterMode = TIM_COUNTERMODE_UP;
-    tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    tim->Init.RepetitionCounter = 0;
+    timInit = (TIM_HandleTypeDef *) timer->handle;
+    timInit->Instance = TIM15;
+    timInit->Init.Period = 100 - 1;
+    timInit->Init.Prescaler = timer->prescaler;
+    timInit->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    timInit->Init.CounterMode = TIM_COUNTERMODE_UP;
+    timInit->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    timInit->Init.RepetitionCounter = 0;
 
-    if (HAL_TIM_Base_Init(tim) != HAL_OK)
+    if (HAL_TIM_Base_Init(timInit) != HAL_OK)
         return SETTING_ERROR;
 
-    TIM_MasterConfigTypeDef masterConf = {0};
     masterConf.MasterOutputTrigger = TIM_TRGO_UPDATE;
     masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
     masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
-        return SETTING_ERROR;
-
-    return SETTING_SUCCESS;
-}
-
-/**
- * @brief Setting PWM output signal
- * @param timer is the base timer data structure
- * @return SETTING_SUCCESS or SETTING_ERROR
- */
-static int settingPWM(TimerDef *timer) {
-    uint32_t sourceClock = HAL_RCC_GetPCLK2Freq();
-    // APB2Divider != 1
-    sourceClock *= 2;
-
-    timer->handle = (void *) &timer8Handle;
-    timer->freq = 10000U; // Hz
-    timer->prescaler = (uint16_t) (sourceClock / timer->freq / 100U - 1U);
-
-    TIM_HandleTypeDef *tim = (TIM_HandleTypeDef *) timer->handle;
-    tim->Instance = TIM8;
-    tim->Init.Period = 100U - 1U;
-    tim->Init.Prescaler = timer->prescaler;
-    tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    tim->Init.CounterMode = TIM_COUNTERMODE_UP;
-    tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    tim->Init.RepetitionCounter = 0;
-
-    if (HAL_TIM_PWM_Init(tim) != HAL_OK)
-        return SETTING_ERROR;
-
-    TIM_MasterConfigTypeDef masterConf = {0};
-    masterConf.MasterOutputTrigger = TIM_TRGO_UPDATE;
-    masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
-    masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
-        return SETTING_ERROR;
-
-    TIM_OC_InitTypeDef pwm = {0};
-    pwm.OCMode = TIM_OCMODE_PWM1;
-    pwm.OCPolarity = TIM_OCPOLARITY_HIGH;
-    pwm.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-    pwm.OCFastMode = TIM_OCFAST_DISABLE;
-    pwm.OCIdleState = TIM_OCIDLESTATE_RESET;
-    pwm.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-
-    pwm.Pulse = 5;
-    if (HAL_TIM_PWM_ConfigChannel(tim, &pwm, TIM_CHANNEL_1) != HAL_OK)
-        return SETTING_ERROR;
-
-    if (HAL_TIMEx_ConfigDeadTime(tim, 64) != HAL_OK)
-        return SETTING_ERROR;
-
-    TIMEx_BreakInputConfigTypeDef breakInit = {0};
-    breakInit.Source = TIM_BREAKINPUTSOURCE_BKIN;
-    breakInit.Polarity = TIM_BREAKINPUTSOURCE_POLARITY_HIGH;
-    breakInit.Enable = TIM_BREAKINPUTSOURCE_ENABLE;
-    if (HAL_TIMEx_ConfigBreakInput(tim, TIM_BREAKINPUT_BRK, &breakInit) != HAL_OK)
-        return SETTING_ERROR;
-
-    TIM_BreakDeadTimeConfigTypeDef breakDT = {0};
-    breakDT.OffStateRunMode = TIM_OSSR_ENABLE;
-    breakDT.OffStateIDLEMode = TIM_OSSI_ENABLE;
-    breakDT.LockLevel = TIM_LOCKLEVEL_OFF;
-    breakDT.DeadTime = 0;
-    breakDT.BreakState = TIM_BREAK_ENABLE;
-    breakDT.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-    breakDT.BreakFilter = 0;
-    breakDT.BreakAFMode = TIM_BREAK_AFMODE_INPUT;
-    breakDT.Break2State = TIM_BREAK2_DISABLE;
-    breakDT.Break2Filter = 0;
-    breakDT.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-    breakDT.Break2AFMode = TIM_BREAK2_AFMODE_INPUT;
-    breakDT.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-    if (HAL_TIMEx_ConfigBreakDeadTime(tim, &breakDT) != HAL_OK)
+    if (HAL_TIMEx_MasterConfigSynchronization(timInit, &masterConf) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
@@ -234,16 +140,16 @@ static int settingADC(ADCDef *adc) {
     adcInit->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
     adcInit->Init.LowPowerAutoWait = DISABLE;
     adcInit->Init.ContinuousConvMode = DISABLE;
-    adcInit->Init.NbrOfConversion = 4;
+    adcInit->Init.NbrOfConversion = 3;
     adcInit->Init.DiscontinuousConvMode = ENABLE;
     adcInit->Init.NbrOfDiscConversion = 1;
     adcInit->Init.ExternalTrigConv = ADC_SOFTWARE_START;
-//    adcInit->Init.ExternalTrigConvEdge =;
+    //    adcInit->Init.ExternalTrigConvEdge =;
     adcInit->Init.SamplingMode = ADC_SAMPLING_MODE_NORMAL;
     adcInit->Init.DMAContinuousRequests = DISABLE;
     adcInit->Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
     adcInit->Init.OversamplingMode = DISABLE;
-//    adcInit->Init.Oversampling =;
+    //    adcInit->Init.Oversampling =;
 
     if (HAL_ADC_Init(adcInit) != HAL_OK)
         return SETTING_ERROR;
@@ -272,106 +178,11 @@ static int settingADC(ADCDef *adc) {
     if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
         return SETTING_ERROR;
 
-    // PB0, ADC1
-    chInit.Channel = ADC_CHANNEL_15;
-    chInit.Rank = ADC_REGULAR_RANK_3;
-    if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
-        return SETTING_ERROR;
-
     // only ADC1
     // ADC_CHANNEL_TEMPSENSOR_ADC1 or ADC_CHANNEL_VREFINT
     chInit.Channel = ADC_CHANNEL_TEMPSENSOR_ADC1;
-    chInit.Rank = ADC_REGULAR_RANK_4;
+    chInit.Rank = ADC_REGULAR_RANK_3;
     if (HAL_ADC_ConfigChannel(adcInit, &chInit) != HAL_OK)
-        return SETTING_ERROR;
-
-    return SETTING_SUCCESS;
-}
-
-/**
- * @brief Setting analog signal generator
- * @param gen is the base generator data structure
- * @return SETTING_SUCCESS or SETTING_ERROR
- */
-static int settingGenerator(GeneratorDef *gen) {
-    gen->dac.handle = (void *) &dac1Handle;
-    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) gen->dac.handle;
-    dacInit->Instance = DAC1;
-    if (HAL_DAC_Init(dacInit) != HAL_OK)
-        return SETTING_ERROR;
-
-    gen->dac.channel.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_AUTOMATIC;
-    gen->dac.channel.DAC_DMADoubleDataMode = DISABLE;
-    gen->dac.channel.DAC_SignedFormat = DISABLE;
-    gen->dac.channel.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
-    gen->dac.channel.DAC_Trigger = DAC_TRIGGER_SOFTWARE;
-    gen->dac.channel.DAC_Trigger2 = DAC_TRIGGER_NONE;
-    gen->dac.channel.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
-    gen->dac.channel.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_EXTERNAL;
-    gen->dac.channel.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
-//    gen->dac.channel.DAC_TrimmingValue =;
-//    gen->dac.channel.DAC_SampleAndHoldConfig =;
-
-    // channel 1 - DC - manual changed voltage
-    if (HAL_DAC_ConfigChannel(dacInit, &gen->dac.channel, DAC_CHANNEL_1) != HAL_OK)
-        return SETTING_ERROR;
-
-    if (HAL_DACEx_SelfCalibrate(dacInit, &gen->dac.channel, DAC_CHANNEL_1) != HAL_OK)
-        return SETTING_ERROR;
-
-    // channel 2 - Timer triggered signal generation, default values
-    gen->dac.channel.DAC_Trigger = DAC_TRIGGER_NONE;
-    gen->dac.channel.DAC_Trigger2 = DAC_TRIGGER_NONE;
-
-    uint32_t sourceClock = HAL_RCC_GetPCLK1Freq();
-    // APB1Divider != 1
-    sourceClock *= 2;
-
-    TIM_HandleTypeDef *tim = NULL;
-    TIM_MasterConfigTypeDef masterConf = {0};
-
-    gen->timer_1.handle = (void *) &timer6Handle;
-    gen->timer_1.freq = 18000000; // Hz
-    gen->timer_1.prescaler = 0;
-
-    tim = (TIM_HandleTypeDef *) gen->timer_1.handle;
-    tim->Instance = TIM6;
-    tim->Init.Period = 4U - 1U;
-    tim->Init.Prescaler = gen->timer_1.prescaler;
-    tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    tim->Init.CounterMode = TIM_COUNTERMODE_UP;
-    tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    tim->Init.RepetitionCounter = 0;
-
-    if (HAL_TIM_Base_Init(tim) != HAL_OK)
-        return SETTING_ERROR;
-
-    masterConf.MasterOutputTrigger = TIM_TRGO_UPDATE;
-    masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
-    masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
-        return SETTING_ERROR;
-
-    gen->timer_2.handle = (void *) &timer7Handle;
-    gen->timer_2.freq = 9000; // Hz
-    gen->timer_2.prescaler = (uint16_t) (sourceClock / gen->timer_2.freq / 100U - 1U);
-
-    tim = (TIM_HandleTypeDef *) gen->timer_2.handle;
-    tim->Instance = TIM7;
-    tim->Init.Period = 100U - 1U;
-    tim->Init.Prescaler = gen->timer_2.prescaler;
-    tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    tim->Init.CounterMode = TIM_COUNTERMODE_UP;
-    tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    tim->Init.RepetitionCounter = 0;
-
-    if (HAL_TIM_Base_Init(tim) != HAL_OK)
-        return SETTING_ERROR;
-
-    masterConf.MasterOutputTrigger = TIM_TRGO_UPDATE;
-    masterConf.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
-    masterConf.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(tim, &masterConf) != HAL_OK)
         return SETTING_ERROR;
 
     return SETTING_SUCCESS;
@@ -398,8 +209,8 @@ static int settingComp(CompDef *comp) {
     comp->dac.channel.DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE;
     comp->dac.channel.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_INTERNAL;
     comp->dac.channel.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
-//    comp->dac.channel.DAC_TrimmingValue =;
-//    comp->dac.channel.DAC_SampleAndHoldConfig =;
+    //    comp->dac.channel.DAC_TrimmingValue =;
+    //    comp->dac.channel.DAC_SampleAndHoldConfig =;
 
     if (HAL_DAC_ConfigChannel(dacInit, &comp->dac.channel, DAC_CHANNEL_2) != HAL_OK)
         return SETTING_ERROR;
@@ -424,34 +235,95 @@ static int settingComp(CompDef *comp) {
 }
 
 /**
- * @brief Setting USART modules
- * @param mcu is the base MCU data structure
+ * @brief Setting DAC
+ * @param dac is the base Digital-to-Analog data structure
  * @return SETTING_SUCCESS or SETTING_ERROR
  */
-static int settingUART(MCUDef *mcu) {
-    UART_HandleTypeDef *uartInit = NULL;
-
-    mcu->uart1.handle = &usart1Handle;
-    uartInit = (UART_HandleTypeDef *) mcu->uart1.handle;
-    uartInit->Instance = USART1;
-    uartInit->FifoMode = UART_FIFOMODE_DISABLE;
-    uartInit->Init.BaudRate = 115200;
-    uartInit->Init.WordLength = UART_WORDLENGTH_8B;
-    uartInit->Init.StopBits = UART_STOPBITS_1;
-    uartInit->Init.Parity = UART_PARITY_NONE;
-    uartInit->Init.Mode = UART_MODE_TX_RX;
-    uartInit->Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    uartInit->Init.OverSampling = UART_OVERSAMPLING_16;
-    uartInit->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-    uartInit->Init.ClockPrescaler = UART_PRESCALER_DIV1;
-    uartInit->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-
-    if (HAL_UART_Init(uartInit) != HAL_OK)
+static int settingDAC(DACDef *dac) {
+    dac->handle = (void *) &dac1Handle;
+    DAC_HandleTypeDef *dacInit = (DAC_HandleTypeDef *) dac->handle;
+    dacInit->Instance = DAC1;
+    if (HAL_DAC_Init(dacInit) != HAL_OK)
         return SETTING_ERROR;
 
-    mcu->uart2.handle = &usart2Handle;
-    uartInit = (UART_HandleTypeDef *) mcu->uart2.handle;
-    uartInit->Instance = USART2;
+    dac->channel.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_AUTOMATIC;
+    dac->channel.DAC_DMADoubleDataMode = DISABLE;
+    dac->channel.DAC_SignedFormat = DISABLE;
+    dac->channel.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
+    dac->channel.DAC_Trigger = DAC_TRIGGER_SOFTWARE;
+    dac->channel.DAC_Trigger2 = DAC_TRIGGER_NONE;
+    dac->channel.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
+    dac->channel.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_EXTERNAL;
+    dac->channel.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
+    // dac->channel.DAC_TrimmingValue =;
+    // dac->channel.DAC_SampleAndHoldConfig =;
+
+    if (HAL_DAC_ConfigChannel(dacInit, &dac->channel, DAC_CHANNEL_1) != HAL_OK)
+        return SETTING_ERROR;
+
+    if (HAL_DACEx_SelfCalibrate(dacInit, &dac->channel, DAC_CHANNEL_1) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
+/**
+ * @brief Setting PWM output signal
+ * @param timer is the base timer data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
+static int settingPWM(TimerDef *timer) {
+    TIM_HandleTypeDef *timInit = NULL;
+    TIM_OC_InitTypeDef pwm = {0};
+
+    uint32_t sourceClock = HAL_RCC_GetPCLK2Freq();
+    // APB2Divider != 1
+    sourceClock *= 2;
+
+    timer->handle = (void *) &timer16Handle;
+    timer->freq = 10000U;
+    timer->prescaler = 72 - 1;
+
+    timInit = (TIM_HandleTypeDef *) timer->handle;
+    timInit->Instance = TIM16;
+    timInit->Init.Period = 100 - 1;
+    timInit->Init.Prescaler = timer->prescaler;
+    timInit->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    timInit->Init.CounterMode = TIM_COUNTERMODE_UP;
+    timInit->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    timInit->Init.RepetitionCounter = 0;
+
+    if (HAL_TIM_PWM_Init(timInit) != HAL_OK)
+        return SETTING_ERROR;
+
+    pwm.OCMode = TIM_OCMODE_PWM1;
+    pwm.OCPolarity = TIM_OCPOLARITY_HIGH;
+    pwm.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+    pwm.OCFastMode = TIM_OCFAST_DISABLE;
+    pwm.OCIdleState = TIM_OCIDLESTATE_RESET;
+    pwm.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+
+    pwm.Pulse = 5;
+    if (HAL_TIM_PWM_ConfigChannel(timInit, &pwm, TIM_CHANNEL_1) != HAL_OK)
+        return SETTING_ERROR;
+
+    if (HAL_TIMEx_ConfigDeadTime(timInit, 24) != HAL_OK)
+        return SETTING_ERROR;
+
+    return SETTING_SUCCESS;
+}
+
+/**
+ * @brief Setting UART modules
+ * @param uart is the base UART data structure
+ * @return SETTING_SUCCESS or SETTING_ERROR
+ */
+static int settingUART(UARTDef *uart) {
+    UART_HandleTypeDef *uartInit = NULL;
+
+    uart->handle = &usart1Handle;
+    uartInit = (UART_HandleTypeDef *) uart->handle;
+    uartInit->Instance = USART1;
     uartInit->FifoMode = UART_FIFOMODE_DISABLE;
     uartInit->Init.BaudRate = 115200;
     uartInit->Init.WordLength = UART_WORDLENGTH_8B;
@@ -493,23 +365,6 @@ static int settingCRC(MCUDef *mcu) {
 }
 
 /**
- * @brief Setting random number generator (RNG) module
- * @param mcu is the base MCU data structure
- * @return SETTING_SUCCESS or SETTING_ERROR
- */
-static int settingRNG(MCUDef *mcu) {
-    mcu->handles.rng = (void *) &rngHandle;
-    RNG_HandleTypeDef *rngInit = (RNG_HandleTypeDef *) mcu->handles.rng;
-    rngInit->Instance = RNG;
-    rngInit->Init.ClockErrorDetection = RNG_CED_ENABLE;
-
-    if (HAL_RNG_Init(rngInit) != HAL_OK)
-        return SETTING_ERROR;
-
-    return SETTING_SUCCESS;
-}
-
-/**
  * @brief Setting watchdog timer (WDT) module
  * @param mcu is the base MCU data structure
  * @return SETTING_SUCCESS or SETTING_ERROR
@@ -534,8 +389,7 @@ static int settingWDT(MCUDef *mcu) {
  * @return SETTING_SUCCESS or SETTING_ERROR
  */
 static int turnOnInterrupts(MCUDef *mcu) {
-    if (HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart1.handle, &mcu->uart1.rxByte, 1U) == HAL_OK &&
-        HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart2.handle, &mcu->uart2.rxByte, 1U) == HAL_OK) {
+    if (HAL_UART_Receive_IT((UART_HandleTypeDef *) mcu->uart.handle, &mcu->uart.rxByte, 1U) == HAL_OK) {
         return SETTING_SUCCESS;
     }
 
@@ -549,27 +403,15 @@ static int turnOnInterrupts(MCUDef *mcu) {
  */
 int initialization(MCUDef *mcu) {
     if (SETTING_SUCCESS != settingSystemClock()) {
-
     } else if (SETTING_SUCCESS != settingGPIO()) {
-
     } else if (SETTING_SUCCESS != settingTimer(&mcu->measTimer)) {
-
-    } else if (SETTING_SUCCESS != settingPWM(&mcu->pwmTimer)) {
-
     } else if (SETTING_SUCCESS != settingADC(&mcu->adc)) {
-
-    } else if (SETTING_SUCCESS != settingGenerator(&mcu->generator)) {
-
+    } else if (SETTING_SUCCESS != settingDAC(&mcu->dac)) {
     } else if (SETTING_SUCCESS != settingComp(&mcu->comp)) {
-
-    } else if (SETTING_SUCCESS != settingUART(mcu)) {
-
+    } else if (SETTING_SUCCESS != settingPWM(&mcu->pwmTimer)) {
+    } else if (SETTING_SUCCESS != settingUART(&mcu->uart)) {
     } else if (SETTING_SUCCESS != settingCRC(mcu)) {
-
-    } else if (SETTING_SUCCESS != settingRNG(mcu)) {
-
     } else if (SETTING_SUCCESS != settingWDT(mcu)) {
-
     } else {
         return turnOnInterrupts(mcu);
     }

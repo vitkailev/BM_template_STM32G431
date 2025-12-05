@@ -138,18 +138,6 @@ void ADC1_2_IRQHandler(void) {
 }
 
 /**
- * @brief Basic timer interrupt handler function
- */
-void TIM6_DAC_IRQHandler(void) {
-}
-
-/**
- * @brief Basic timer interrupt handler function
- */
-void TIM7_IRQHandler(void) {
-}
-
-/**
  * @brief General purpose timer interrupt handler function
  */
 void TIM1_BRK_TIM15_IRQHandler(void) {
@@ -167,12 +155,5 @@ void COMP1_2_3_IRQHandler(void) {
  * @brief USART interrupt handler function
  */
 void USART1_IRQHandler(void) {
-    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart1.handle);
-}
-
-/**
- * @brief USART interrupt handler function
- */
-void USART2_IRQHandler(void) {
-    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart2.handle);
+    HAL_UART_IRQHandler((UART_HandleTypeDef *) Mcu.uart.handle);
 }

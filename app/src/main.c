@@ -17,7 +17,7 @@ int main(void) {
         Mcu.flags.isWDTTriggered = true;
     __HAL_RCC_CLEAR_RESET_FLAGS();
 
-    while (true) {
+    while (1) {
         HAL_IWDG_Refresh((IWDG_HandleTypeDef *) Mcu.handles.wdt);
 
         application();
@@ -34,19 +34,16 @@ static void application(void) {
         Mcu.flags.isSysTickTriggered = false;
 
         checkPinState(&Mcu.button[BUTTON_1]);
-        changePinState(&Mcu.oscPins[OSC_CHANNEL_1], !getPinState(&Mcu.oscPins[OSC_CHANNEL_1]));
     }
 
     if (Mcu.measTimer.isTriggered) {
         Mcu.measTimer.isTriggered = false;
 
         readAnalogValues(&Mcu.adc);
-        changePinState(&Mcu.oscPins[OSC_CHANNEL_2], !getPinState(&Mcu.oscPins[OSC_CHANNEL_2]));
     }
 
     if (isPinTriggered(&Mcu.button[BUTTON_1])) {
         Mcu.button[BUTTON_1].isTriggered = false;
-
     }
 
     if (isADCFinished(&Mcu.adc)) {
@@ -60,27 +57,22 @@ static void application(void) {
                 value = 0;
             } else {
                 value *= VREFP;
-                value /= 4095;
+                value >>= 12;
             }
-            Mcu.adc.value[i] = value;
+            Mcu.adc.value[i] = (uint16_t) value;
         }
     }
 
     if (Mcu.comp.isTriggered) {
         Mcu.comp.isTriggered = false;
 
-        if (Mcu.comp.errType == 0)
-            changePinState(&Mcu.oscPins[OSC_CHANNEL_3], Mcu.comp.state);
+        if (Mcu.comp.errType == 0) {
+        }
     }
 
-    UART_update(&Mcu.uart1, HAL_GetTick());
-    if (UART_isHaveData(&Mcu.uart1)) {
-        Mcu.uart1.isHaveData = false;
-    }
-
-    UART_update(&Mcu.uart2, HAL_GetTick());
-    if (UART_isHaveData(&Mcu.uart2)) {
-        Mcu.uart2.isHaveData = false;
+    UART_update(&Mcu.uart, HAL_GetTick());
+    if (UART_isHaveData(&Mcu.uart)) {
+        Mcu.uart.isHaveData = false;
     }
 }
 
@@ -90,29 +82,18 @@ static int initPeripheral(void) {
     Mcu.button[BUTTON_1].duration = 50; // ms
     Mcu.button[BUTTON_1].pin = GPIO_PIN_13;
     Mcu.button[BUTTON_1].handle = GPIOC;
-    Mcu.oscPins[OSC_CHANNEL_1].pin = GPIO_PIN_10; // D2
-    Mcu.oscPins[OSC_CHANNEL_1].handle = GPIOA;
-    Mcu.oscPins[OSC_CHANNEL_2].pin = GPIO_PIN_5; // D4
-    Mcu.oscPins[OSC_CHANNEL_2].handle = GPIOB;
-    Mcu.oscPins[OSC_CHANNEL_3].pin = GPIO_PIN_8; // D7
-    Mcu.oscPins[OSC_CHANNEL_3].handle = GPIOA;
-    Mcu.oscPins[OSC_CHANNEL_4].pin = GPIO_PIN_9; // D8
-    Mcu.oscPins[OSC_CHANNEL_4].handle = GPIOA;
 
-    UART_init(&Mcu.uart1);
-    UART_init(&Mcu.uart2);
+    UART_init(&Mcu.uart);
 
     if (SETTING_SUCCESS == initialization(&Mcu)) {
         setCompThresholdLevel(&Mcu.comp, 2137);
         HAL_COMP_Start((COMP_HandleTypeDef *) Mcu.comp.handle);
 
-        HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) Mcu.measTimer.handle);
-
         HAL_TIM_PWM_Start((TIM_HandleTypeDef *) Mcu.pwmTimer.handle, TIM_CHANNEL_1);
         HAL_TIMEx_PWMN_Start((TIM_HandleTypeDef *) Mcu.pwmTimer.handle, TIM_CHANNEL_1);
         setPWMDutyCycle(&Mcu.pwmTimer, TIM_CHANNEL_1, 15);
 
-        changeGeneratorMode(&Mcu.generator, GENERATE_SAWTOOTH);
+        HAL_TIM_Base_Start_IT((TIM_HandleTypeDef *) Mcu.measTimer.handle);
     }
     return 0;
 }
